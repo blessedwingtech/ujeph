@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Liste des Cours - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3>📚 Liste des Cours</h3>
+            <p class="text-muted">Gestion de tous les cours de l'université</p>
+        </div>
+        <div>
+            <a href="{% url 'academics:creer_cours' %}" class="btn btn-success">
+                ➕ Nouveau cours
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            {% if cours_list %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Intitulé</th>
+                            <th>Faculté</th>
+                            <th>Professeur</th>
+                            <th>Niveau</th>
+                            <th>Semestre</th>
+                            <th>Crédits</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cours in cours_list %}
+                        <tr>
+                            <td>
+                                <strong>{{ cours.intitule }}</strong>
+                                {% if cours.code %}
+                                <br><small class="text-muted">{{ cours.code }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ cours.faculte.nom }}</td>
+                            <td>
+                                {% if cours.professeur %}
+                                    {{ cours.professeur.get_full_name }}
+                                {% else %}
+                                    <span class="text-muted">Non assigné</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <span class="badge bg-info">{{ cours.get_niveau_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ cours.get_semestre_display }}</span>
+                            </td>
+                            <td>{{ cours.credits }} crédits</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'academics:modifier_cours' cours.id %}"
+                                       class="btn btn-outline-primary" title="Modifier">
+                                        ✏️
+                                    </a>
+                                    <a href="{% url 'academics:supprimer_cours' cours.id %}" 
+                                       class="btn btn-outline-danger" title="Supprimer"
+                                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce cours ?');">
+                                        🗑️
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Pagination">
+                <ul class="pagination justify-content-center mt-4">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédent</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivant</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <div class="text-muted mb-3">
+                    <i class="bi bi-book" style="font-size: 3rem;"></i>
+                </div>
+                <h5>Aucun cours trouvé</h5>
+                <p class="text-muted">Commencez par créer votre premier cours.</p>
+                <a href="{% url 'academics:creer_cours' %}" class="btn btn-success">
+                    ➕ Créer un cours
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,562 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Annonces Actives - SG-UJEPH{% endblock %}
+
+{% block extra_head %}
+<style>
+    .annonces-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .annonce-item {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 25px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border-left: 5px solid transparent;
+    }
+    
+    .annonce-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    .annonce-item.urgence {
+        border-left-color: #dc3545;
+        animation: pulse 2s infinite;
+    }
+    
+    .annonce-item.important {
+        border-left-color: #ffc107;
+    }
+    
+    .annonce-item.info {
+        border-left-color: #0dcaf0;
+    }
+    
+    .annonce-header {
+        padding: 25px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .annonce-badge {
+        font-size: 0.8rem;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    
+    .annonce-title {
+        font-weight: 700;
+        margin: 15px 0;
+        color: #1a202c;
+    }
+    
+    .annonce-meta {
+        color: #718096;
+        font-size: 0.9rem;
+    }
+    
+    .annonce-body {
+        padding: 25px;
+    }
+    
+    .annonce-content {
+        line-height: 1.7;
+        color: #4a5568;
+    }
+    
+    .annonce-footer {
+        padding: 20px 25px;
+        background: #f8f9fa;
+        border-top: 1px solid #f0f0f0;
+    }
+    
+    .destinataires-badges .badge {
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+    
+    .filters-sidebar {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+    
+    .filter-section {
+        margin-bottom: 25px;
+    }
+    
+    .filter-title {
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: var(--primary-color);
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 8px;
+    }
+    
+    .filter-option {
+        padding: 10px 15px;
+        margin: 5px 0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-option:hover {
+        background-color: rgba(0, 51, 102, 0.05);
+    }
+    
+    .filter-option.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .empty-annonces {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-annonces-icon {
+        font-size: 4rem;
+        opacity: 0.3;
+        margin-bottom: 20px;
+    }
+    
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    
+    @media (max-width: 768px) {
+        .annonce-header, .annonce-body, .annonce-footer {
+            padding: 20px;
+        }
+        
+        .filters-sidebar {
+            margin-bottom: 30px;
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Filtres -->
+        <div class="col-lg-3 mb-4 mb-lg-0">
+            <div class="filters-sidebar">
+                <h4 class="mb-4">
+                    <i class="fas fa-filter me-2"></i>Filtres
+                </h4>
+                
+                <div class="filter-section">
+                    <h6 class="filter-title">Type d'annonce</h6>
+                    <div id="typeFilters">
+                        <div class="filter-option active" data-type="all">
+                            Tous les types
+                        </div>
+                        <div class="filter-option" data-type="general">
+                            <i class="fas fa-bullhorn me-2"></i>Générales
+                        </div>
+                        <div class="filter-option" data-type="urgence">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Urgences
+                        </div>
+                        <div class="filter-option" data-type="cours">
+                            <i class="fas fa-book me-2"></i>Cours
+                        </div>
+                        <div class="filter-option" data-type="examen">
+                            <i class="fas fa-clipboard-check me-2"></i>Examens
+                        </div>
+                        <div class="filter-option" data-type="autre">
+                            <i class="fas fa-ellipsis-h me-2"></i>Autres
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-section">
+                    <h6 class="filter-title">Destinataires</h6>
+                    <div id="destinataireFilters">
+                        <div class="filter-option active" data-dest="all">
+                            Tous les destinataires
+                        </div>
+                        <div class="filter-option" data-dest="etudiants">
+                            <i class="fas fa-user-graduate me-2"></i>Étudiants
+                        </div>
+                        <div class="filter-option" data-dest="professeurs">
+                            <i class="fas fa-chalkboard-teacher me-2"></i>Professeurs
+                        </div>
+                        <div class="filter-option" data-dest="admins">
+                            <i class="fas fa-user-shield me-2"></i>Administrateurs
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-section">
+                    <h6 class="filter-title">Importance</h6>
+                    <div id="importanceFilters">
+                        <div class="filter-option active" data-importance="all">
+                            Toutes
+                        </div>
+                        <div class="filter-option" data-importance="important">
+                            <i class="fas fa-star me-2"></i>Importantes
+                        </div>
+                        <div class="filter-option" data-importance="normal">
+                            <i class="fas fa-circle me-2"></i>Normales
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="resetFilters" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-redo me-2"></i>Réinitialiser les filtres
+                </button>
+            </div>
+        </div>
+        
+        <!-- Liste des annonces -->
+        <div class="col-lg-9">
+            <div class="annonces-container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="h3 mb-2">
+                            <i class="fas fa-newspaper text-primary me-2"></i>
+                            Actualités et Annonces
+                        </h1>
+                        <p class="text-muted mb-0">
+                            Restez informé des dernières nouvelles de l'université
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        <div class="badge bg-primary">
+                            {{ annonces|length }} annonce{{ annonces|pluralize:"s" }}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if annonces %}
+                <div id="annoncesList">
+                    {% for annonce in annonces %}
+                    <div class="annonce-item 
+                                {% if annonce.type_annonce == 'urgence' %}urgence{% endif %}
+                                {% if annonce.est_important %}important{% endif %}"
+                         data-type="{{ annonce.type_annonce }}"
+                         data-destinataires="{% if annonce.destinataire_tous %}all{% else %}{% if annonce.destinataire_etudiants %}etudiants{% endif %}{% if annonce.destinataire_professeurs %}professeurs{% endif %}{% if annonce.destinataire_admins %}admins{% endif %}{% endif %}"
+                         data-importance="{% if annonce.est_important %}important{% else %}normal{% endif %}">
+                        
+                        <div class="annonce-header">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="annonce-badge 
+                                                {% if annonce.type_annonce == 'urgence' %}bg-danger
+                                                {% elif annonce.type_annonce == 'cours' %}bg-success
+                                                {% elif annonce.type_annonce == 'examen' %}bg-warning text-dark
+                                                {% else %}bg-primary{% endif %}">
+                                        <i class="fas fa-{{ annonce.get_icon }} me-1"></i>
+                                        {{ annonce.get_type_annonce_display }}
+                                    </span>
+                                    
+                                    {% if annonce.est_important %}
+                                    <span class="badge bg-warning text-dark ms-2">
+                                        <i class="fas fa-star me-1"></i>Important
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <small class="annonce-meta">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ annonce.date_publication|date:"d/m/Y à H:i" }}
+                                </small>
+                            </div>
+                            
+                            <h3 class="annonce-title">{{ annonce.titre }}</h3>
+                            
+                            <div class="annonce-meta">
+                                <div class="d-flex flex-wrap align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-user me-1"></i>
+                                        Par {{ annonce.auteur.get_full_name|default:annonce.auteur.username }}
+                                    </div>
+                                    
+                                    {% if annonce.faculte %}
+                                    <div class="me-3">
+                                        <i class="fas fa-university me-1"></i>
+                                        {{ annonce.faculte.nom }}
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if annonce.date_expiration %}
+                                    <div>
+                                        <i class="fas fa-hourglass-end me-1"></i>
+                                        Expire le {{ annonce.date_expiration|date:"d/m/Y" }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="annonce-body">
+                            <div class="annonce-content">
+                                {{ annonce.contenu|linebreaks }}
+                            </div>
+                            
+                            {% if annonce.fichier_joint %}
+                            <div class="mt-4">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-paperclip me-2"></i>Fichier joint
+                                </h6>
+                                <a href="{{ annonce.fichier_joint.url }}" 
+                                   target="_blank" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-download me-2"></i>
+                                    Télécharger {{ annonce.fichier_joint.name|cut:"annonces/fichiers/" }}
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="annonce-footer">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="destinataires-badges">
+                                    {% if annonce.destinataire_tous %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-users me-1"></i>Pour tout le monde
+                                    </span>
+                                    {% else %}
+                                        {% if annonce.destinataire_etudiants %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-user-graduate me-1"></i>Étudiants
+                                        </span>
+                                        {% endif %}
+                                        {% if annonce.destinataire_professeurs %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-chalkboard-teacher me-1"></i>Professeurs
+                                        </span>
+                                        {% endif %}
+                                        {% if annonce.destinataire_admins %}
+                                        <span class="badge bg-dark">
+                                            <i class="fas fa-user-shield me-1"></i>Administrateurs
+                                        </span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                
+                                {% if user.is_authenticated and user.role == 'admin' %}
+                                <div>
+                                    <a href="{% url 'academics:editer_annonce' annonce.pk %}" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit me-1"></i>Modifier
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if annonces.has_other_pages %}
+                <nav aria-label="Pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if annonces.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ annonces.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in annonces.paginator.page_range %}
+                            {% if annonces.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > annonces.number|add:'-3' and num < annonces.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if annonces.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ annonces.next_page_number }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <!-- État vide -->
+                <div class="empty-annonces">
+                    <div class="empty-annonces-icon">
+                        <i class="fas fa-newspaper"></i>
+                    </div>
+                    <h4 class="mb-3">Aucune annonce disponible</h4>
+                    <p class="text-muted mb-4">
+                        Il n'y a actuellement aucune annonce active correspondant à vos critères.
+                    </p>
+                    {% if user.is_authenticated and user.role == 'admin' %}
+                    <a href="{% url 'academics:creer_annonce' %}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-2"></i>Créer une annonce
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filtrage des annonces
+        const annonceItems = document.querySelectorAll('.annonce-item');
+        const typeFilters = document.querySelectorAll('#typeFilters .filter-option');
+        const destinataireFilters = document.querySelectorAll('#destinataireFilters .filter-option');
+        const importanceFilters = document.querySelectorAll('#importanceFilters .filter-option');
+        
+        let activeTypeFilter = 'all';
+        let activeDestFilter = 'all';
+        let activeImportanceFilter = 'all';
+        
+        function filterAnnonces() {
+            let visibleCount = 0;
+            
+            annonceItems.forEach(item => {
+                const typeMatch = activeTypeFilter === 'all' || 
+                                 item.dataset.type === activeTypeFilter;
+                
+                const destinataires = item.dataset.destinataires;
+                const destMatch = activeDestFilter === 'all' || 
+                                (destinataires && destinataires.includes(activeDestFilter)) ||
+                                (activeDestFilter === 'all' && destinataires === 'all');
+                
+                const importanceMatch = activeImportanceFilter === 'all' || 
+                                       item.dataset.importance === activeImportanceFilter;
+                
+                if (typeMatch && destMatch && importanceMatch) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                    // Animation d'apparition
+                    setTimeout(() => {
+                        item.style.opacity = '1';
+                        item.style.transform = 'translateY(0)';
+                    }, 10);
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Afficher message si aucune annonce ne correspond
+            const annoncesList = document.getElementById('annoncesList');
+            if (visibleCount === 0 && annoncesList) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'empty-annonces';
+                emptyMessage.innerHTML = `
+                    <div class="empty-annonces-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h4 class="mb-3">Aucune annonce correspondante</h4>
+                    <p class="text-muted">Aucune annonce ne correspond aux filtres sélectionnés.</p>
+                `;
+                
+                // Vérifier si le message existe déjà
+                if (!annoncesList.querySelector('.empty-annonces')) {
+                    annoncesList.appendChild(emptyMessage);
+                }
+            } else {
+                // Supprimer le message s'il existe
+                const existingEmptyMessage = annoncesList.querySelector('.empty-annonces');
+                if (existingEmptyMessage) {
+                    existingEmptyMessage.remove();
+                }
+            }
+        }
+        
+        // Gestion des filtres de type
+        typeFilters.forEach(filter => {
+            filter.addEventListener('click', function() {
+                typeFilters.forEach(f => f.classList.remove('active'));
+                this.classList.add('active');
+                activeTypeFilter = this.dataset.type;
+                filterAnnonces();
+            });
+        });
+        
+        // Gestion des filtres de destinataires
+        destinataireFilters.forEach(filter => {
+            filter.addEventListener('click', function() {
+                destinataireFilters.forEach(f => f.classList.remove('active'));
+                this.classList.add('active');
+                activeDestFilter = this.dataset.dest;
+                filterAnnonces();
+            });
+        });
+        
+        // Gestion des filtres d'importance
+        importanceFilters.forEach(filter => {
+            filter.addEventListener('click', function() {
+                importanceFilters.forEach(f => f.classList.remove('active'));
+                this.classList.add('active');
+                activeImportanceFilter = this.dataset.importance;
+                filterAnnonces();
+            });
+        });
+        
+        // Réinitialiser les filtres
+        document.getElementById('resetFilters').addEventListener('click', function() {
+            typeFilters.forEach(f => f.classList.remove('active'));
+            destinataireFilters.forEach(f => f.classList.remove('active'));
+            importanceFilters.forEach(f => f.classList.remove('active'));
+            
+            document.querySelector('#typeFilters .filter-option[data-type="all"]').classList.add('active');
+            document.querySelector('#destinataireFilters .filter-option[data-dest="all"]').classList.add('active');
+            document.querySelector('#importanceFilters .filter-option[data-importance="all"]').classList.add('active');
+            
+            activeTypeFilter = 'all';
+            activeDestFilter = 'all';
+            activeImportanceFilter = 'all';
+            
+            filterAnnonces();
+        });
+        
+        // Animation initiale
+        annonceItems.forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(20px)';
+            item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            
+            setTimeout(() => {
+                item.style.opacity = '1';
+                item.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+        
+        // Marquer comme lues (optionnel)
+        if (localStorage) {
+            annonceItems.forEach(item => {
+                const annonceId = item.id || item.dataset.id;
+                if (annonceId && localStorage.getItem(`annonce_${annonceId}_read`)) {
+                    item.classList.add('read');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

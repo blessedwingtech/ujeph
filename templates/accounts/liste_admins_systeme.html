@@ -1,0 +1,128 @@
+<!-- templates/accounts/liste_admins_systeme.html -->
+{% extends 'base.html' %}
+{% block title %}Administrateurs Système - Super Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-2">
+                <i class="bi bi-shield-fill text-danger"></i> Administrateurs Système
+            </h3>
+            <p class="text-muted mb-0">
+                Liste complète de tous les administrateurs créés
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'accounts:creer_admin_systeme' %}" class="btn btn-danger me-2">
+                <i class="bi bi-person-plus"></i> Nouveau
+            </a>
+            <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-house"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Carte principale -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            {% if admins %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Identifiant</th>
+                            <th>Niveau d'accès</th>
+                            <th>Permissions</th>
+                            <th>Date création</th>
+                            <th>Dernière connexion</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for admin in admins %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light p-2 rounded me-3">
+                                        <i class="bi bi-person-badge text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <strong>{{ admin.user.get_full_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ admin.user.email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <code>{{ admin.user.username }}</code>
+                            </td>
+                            <td>
+                                {% if admin.niveau_acces == 'super' %}
+                                <span class="badge bg-danger">{{ admin.get_niveau_acces_display }}</span>
+                                {% elif admin.niveau_acces == 'academique' %}
+                                <span class="badge bg-warning">{{ admin.get_niveau_acces_display }}</span>
+                                {% else %}
+                                <span class="badge bg-info">{{ admin.get_niveau_acces_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% if admin.peut_gerer_utilisateurs %}
+                                    <span class="badge bg-primary">👥</span>
+                                    {% endif %}
+                                    {% if admin.peut_gerer_cours %}
+                                    <span class="badge bg-success">📚</span>
+                                    {% endif %}
+                                    {% if admin.peut_valider_notes %}
+                                    <span class="badge bg-warning">📝</span>
+                                    {% endif %}
+                                    {% if admin.peut_gerer_facultes %}
+                                    <span class="badge bg-info">🏛️</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <small>{{ admin.date_nomination|date:"d/m/Y" }}</small>
+                            </td>
+                            <td>
+                                {% if admin.user.last_login %}
+                                <small>{{ admin.user.last_login|date:"d/m/Y H:i" }}</small>
+                                {% else %}
+                                <span class="badge bg-secondary">Jamais</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" title="Voir">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-warning" title="Modifier">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" title="Désactiver">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-shield-slash display-6 text-muted mb-3"></i>
+                <h5 class="text-muted">Aucun administrateur créé</h5>
+                <p class="text-muted mb-3">Commencez par créer votre premier administrateur</p>
+                <a href="{% url 'accounts:creer_admin_systeme' %}" class="btn btn-danger">
+                    <i class="bi bi-person-plus"></i> Créer un Administrateur
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

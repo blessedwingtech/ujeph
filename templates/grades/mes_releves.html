@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% block title %}Mes Relevés de Notes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-earmark-text"></i> Mes Relevés de Notes
+                    </h4>
+                    <small class="opacity-75">{{ etudiant.user.get_full_name }} - {{ etudiant.matricule }}</small>
+                </div>
+                <div>
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-book"></i> {{ etudiant.faculte.nom }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            {% if not releves_par_annee %}
+            <div class="text-center py-5">
+                <i class="bi bi-file-earmark-x display-1 text-muted"></i>
+                <h5 class="mt-3">Aucun relevé disponible</h5>
+                <p class="text-muted">Vos relevés de notes apparaîtront ici après chaque semestre.</p>
+            </div>
+            {% else %}
+            
+            <!-- Navigation par année -->
+            <div class="mb-4">
+                <div class="nav nav-pills" id="pills-tab" role="tablist">
+                    {% for annee, releves in releves_par_annee.items %}
+                    <button class="nav-link {% if forloop.first %}active{% endif %}" 
+                            id="pills-{{ annee|slugify }}-tab" 
+                            data-bs-toggle="pill" 
+                            data-bs-target="#pills-{{ annee|slugify }}" 
+                            type="button" role="tab">
+                        {{ annee }}
+                        <span class="badge bg-secondary">{{ releves|length }}</span>
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Contenu par année -->
+            <div class="tab-content" id="pills-tabContent">
+                {% for annee, releves in releves_par_annee.items %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" 
+                     id="pills-{{ annee|slugify }}" 
+                     role="tabpanel">
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Année académique : <strong>{{ annee }}</strong>
+                        {% if forloop.first %}
+                        <span class="float-end">
+                            <i class="bi bi-check-circle text-success"></i> Année en cours
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        {% for releve in releves %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header d-flex justify-content-between align-items-center {% if releve.semestre == 'S1' %}bg-info text-white{% else %}bg-warning text-dark{% endif %}">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-calendar-event"></i> 
+                                        {{ releve.semestre }}
+                                    </h5>
+                                    <span class="badge {% if releve.moyenne_semestre >= 70 %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ releve.moyenne_semestre|floatformat:2 }}/100
+                                    </span>
+                                </div>
+                                
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <h6>Détails</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="bi bi-book"></i> <strong>{{ releve.details_notes.notes|length }}</strong> cours</li>
+                                                <li><i class="bi bi-check-circle text-success"></i> <strong>{{ releve.calculer_stats.cours_valides|default:0 }}</strong> validés</li>
+                                                <li><i class="bi bi-x-circle text-danger"></i> <strong>{{ releve.calculer_stats.cours_echoues|default:0 }}</strong> échoués</li>
+                                                <li><i class="bi bi-calendar"></i> {{ releve.date_creation|date:"d/m/Y" }}</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="display-6 fw-bold {% if releve.moyenne_semestre >= 70 %}text-success{% else %}text-danger{% endif %}">
+                                                {{ releve.moyenne_semestre|floatformat:1 }}
+                                            </div>
+                                            <small>Moyenne</small>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if releve.moyenne_cumulee %}
+                                    <div class="mt-3 border-top pt-3">
+                                        <div class="text-center">
+                                            <small class="text-muted">Moyenne Cumulée</small>
+                                            <div class="h4 {% if releve.moyenne_cumulee >= 70 %}text-success{% else %}text-warning{% endif %}">
+                                                {{ releve.moyenne_cumulee|floatformat:2 }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="card-footer bg-transparent">
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{% url 'grades:detail_releve' releve.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Voir détails
+                                        </a>
+                                        <a href="{% url 'grades:exporter_releve_csv' releve.id %}" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-download"></i> CSV
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Résumé de l'année -->
+                    <div class="card mt-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="bi bi-graph-up"></i> Résumé Année {{ annee }}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h3 class="text-primary">{{ releves|length }}</h3>
+                                            <small class="text-muted">Semestres</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h3 class="text-success">
+                                                {% with total_cours=0 %}
+                                                {% for releve in releves %}
+                                                {% with total_cours=total_cours|add:releve.details_notes.notes|length %}
+                                                {% endwith %}
+                                                {% endfor %}
+                                                {{ total_cours }}
+                                                {% endwith %}
+                                            </h3>
+                                            <small class="text-muted">Cours suivis</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h3 class="text-info">
+                                                {% if releves.0.moyenne_cumulee %}
+                                                {{ releves.0.moyenne_cumulee|floatformat:1 }}
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </h3>
+                                            <small class="text-muted">Moyenne annuelle</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h3 class="text-warning">{{ etudiant.niveau }}</h3>
+                                            <small class="text-muted">Niveau</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Informations -->
+            <div class="mt-4 border-top pt-3">
+                <div class="alert alert-light">
+                    <h6><i class="bi bi-question-circle"></i> À propos des relevés</h6>
+                    <ul class="mb-0">
+                        <li>Les relevés sont générés automatiquement à la fin de chaque semestre</li>
+                        <li>Seules les notes <strong>publiées</strong> sont incluses</li>
+                        <li>La moyenne est calculée sur une base de 100 points</li>
+                        <li>Seuil de validation : <strong>70/100</strong> selon les critères UJEPH</li>
+                        <li>Pour toute réclamation, contactez le service académique</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Graphique simple des moyennes
+    const tabs = document.querySelectorAll('.nav-link[data-bs-toggle="pill"]');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(event) {
+            // Vous pouvez ajouter ici un graphique Chart.js pour chaque année
+            console.log('Tab changed:', event.target.id);
+        });
+    });
+});
+</script>
+{% endblock %}

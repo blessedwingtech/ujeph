@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Mes Notes - Étudiant{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>📊 Mes Notes Publiées</h3>
+    <p class="text-muted">Consultation de vos notes validées et moyennes semestrielles</p>
+
+    {% if etudiant %}
+        <div class="row mb-4">
+            <!-- Informations étudiant -->
+            <div class="col-md-6 mb-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <strong>Informations personnelles</strong>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Matricule:</strong> {{ etudiant.matricule }}</p>
+                        <p><strong>Faculté:</strong> {{ etudiant.faculte.nom }}</p>
+                        <p><strong>Niveau:</strong> {{ etudiant.get_niveau_display }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Moyennes -->
+            <div class="col-md-6 mb-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <strong>Moyennes</strong>
+                    </div>
+                    <div class="card-body">
+                        <!-- Moyenne générale -->
+                        <div class="mb-2">
+                            <strong>Moyenne générale:</strong>
+                            {% if moyenne_generale %}
+                                <span class="badge bg-success fs-6">{{ moyenne_generale|floatformat:2 }}/100</span>
+                                <small class="text-muted">({{ total_notes }} note{{ total_notes|pluralize }})</small>
+                            {% else %}
+                                <span class="text-muted">Non disponible</span>
+                            {% endif %}
+                        </div>
+                        
+                        <hr class="my-2">
+                        
+                        <!-- Par semestre -->
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Semestre 1:</strong><br>
+                                {% if moyenne_s1 %}
+                                    <span class="fw-bold">{{ moyenne_s1|floatformat:2 }}/100</span><br>
+                                    <small class="text-muted">({{ count_s1 }} note{{ count_s1|pluralize }})</small>
+                                {% else %}
+                                    <span class="text-muted">--</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-6">
+                                <strong>Semestre 2:</strong><br>
+                                {% if moyenne_s2 %}
+                                    <span class="fw-bold">{{ moyenne_s2|floatformat:2 }}/100</span><br>
+                                    <small class="text-muted">({{ count_s2 }} note{{ count_s2|pluralize }})</small>
+                                {% else %}
+                                    <span class="text-muted">--</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if notes_publiees %}
+            <!-- Notes par semestre -->
+            <div class="row mb-4">
+                <!-- S1 -->
+                <div class="col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-info text-white">
+                            <strong>Semestre 1</strong>
+                            <span class="badge bg-white text-info float-end">{{ count_s1 }}</span>
+                        </div>
+                        <div class="card-body">
+                            {% if count_s1 > 0 %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Cours</th>
+                                                <th>Note</th>
+                                                <th>Validée le</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for note in notes_publiees %}
+                                            {% if note.cours.semestre == 'S1' %}
+                                            <tr>
+                                                <td>{{ note.cours.intitule|truncatechars:30 }}</td>
+                                                <td>
+                                                    <span class="fw-bold {% if note.valeur >= 50 %}text-success{% else %}text-danger{% endif %}">
+                                                        {{ note.valeur }}/100
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if note.date_validation %}
+                                                        {{ note.date_validation|date:"d/m/Y" }}
+                                                    {% else %}
+                                                        <span class="text-muted">N/A</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center mb-0">Aucune note pour S1</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- S2 -->
+                <div class="col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-warning text-white">
+                            <strong>Semestre 2</strong>
+                            <span class="badge bg-white text-warning float-end">{{ count_s2 }}</span>
+                        </div>
+                        <div class="card-body">
+                            {% if count_s2 > 0 %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Cours</th>
+                                                <th>Note</th>
+                                                <th>Validée le</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for note in notes_publiees %}
+                                            {% if note.cours.semestre == 'S2' %}
+                                            <tr>
+                                                <td>{{ note.cours.intitule|truncatechars:30 }}</td>
+                                                <td>
+                                                    <span class="fw-bold {% if note.valeur >= 50 %}text-success{% else %}text-danger{% endif %}">
+                                                        {{ note.valeur }}/100
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if note.date_validation %}
+                                                        {{ note.date_validation|date:"d/m/Y" }}
+                                                    {% else %}
+                                                        <span class="text-muted">N/A</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted text-center mb-0">Aucune note pour S2</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toutes les notes -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <strong>Détails de toutes les notes</strong>
+                    <span class="badge bg-primary float-end">{{ total_notes }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Cours</th>
+                                    <th>Semestre</th>
+                                    <th>Type d'évaluation</th>
+                                    <th>Note</th>
+                                    <th>Mention</th>
+                                    <th>Validée le</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for note in notes_publiees %}
+                                <tr>
+                                    <td>{{ note.cours.intitule }}</td>
+                                    <td>
+                                        <span class="badge {% if note.cours.semestre == 'S1' %}bg-info{% else %}bg-warning{% endif %}">
+                                            {{ note.cours.semestre }}
+                                        </span>
+                                    </td>
+                                    <td>{{ note.get_type_evaluation_display }}</td>
+                                    <td>
+                                        <span class="fw-bold {% if note.valeur >= 50 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ note.valeur }}/100
+                                        </span>
+                                    </td>
+                                    <!-- Dans le template, remplacez la partie mention par : -->
+                                    <td>
+                                        <span class="badge bg-{{ note.valeur|couleur_mention }}">
+                                            {{ note.valeur|mention_note }}
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- <td> -->
+                                        <!-- Calcul de la mention basée sur la note -->
+                                        <!-- {% if note.valeur >= 90 %}
+                                            <span class="badge bg-success">Excellent</span>
+                                        {% elif note.valeur >= 80 %}
+                                            <span class="badge bg-primary">Très bien</span>
+                                        {% elif note.valeur >= 70 %}
+                                            <span class="badge bg-info">Bien</span>
+                                        {% elif note.valeur >= 60 %}
+                                            <span class="badge bg-warning">Assez bien</span>
+                                        {% elif note.valeur >= 50 %}
+                                            <span class="badge bg-secondary">Passable</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Insuffisant</span>
+                                        {% endif %}
+                                    </td> -->
+                                    <td>
+                                        {% if note.date_validation %}
+                                            {{ note.date_validation|date:"d/m/Y" }}
+                                            <br>
+                                            <small class="text-muted">{{ note.date_validation|time:"H:i" }}</small>
+                                        {% else %}
+                                            <span class="text-muted">--</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Aucune note -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-journal-x display-1 text-muted"></i>
+                    </div>
+                    <h4 class="text-muted mb-2">Aucune note publiée</h4>
+                    <p class="text-muted mb-0">
+                        Vos notes n'ont pas encore été validées par l'administration.
+                    </p>
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Les notes apparaîtront ici une fois qu'elles auront été validées par vos professeurs et l'administration.
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <!-- Pas de profil étudiant -->
+        <div class="alert alert-warning mt-3">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            ❌ Aucun profil étudiant trouvé pour votre compte.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Style CSS -->
+<style>
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.badge.bg-info {
+    background-color: #0dcaf0 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+</style>
+{% endblock %}

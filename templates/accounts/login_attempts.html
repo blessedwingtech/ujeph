@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Monitoring des tentatives de connexion{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2"><i class="bi bi-shield-lock text-primary me-2"></i>Monitoring des tentatives de connexion</h1>
+            <p class="text-muted">Surveillance et protection contre les attaques par force brute</p>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="text-center">
+                <div class="fs-4 fw-bold text-primary">{{ total }}</div>
+                <div class="text-muted small">Total</div>
+            </div>
+            <div class="text-center">
+                <div class="fs-4 fw-bold text-success">{{ successful }}</div>
+                <div class="text-muted small">Succès</div>
+            </div>
+            <div class="text-center">
+                <div class="fs-4 fw-bold text-danger">{{ failed }}</div>
+                <div class="text-muted small">Échecs</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtres</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Période</label>
+                    <select name="date" class="form-select form-select-sm">
+                        <option value="">Toutes</option>
+                        <option value="today" {% if filters.date == 'today' %}selected{% endif %}>Aujourd'hui</option>
+                        <option value="yesterday" {% if filters.date == 'yesterday' %}selected{% endif %}>Hier</option>
+                        <option value="week" {% if filters.date == 'week' %}selected{% endif %}>7 derniers jours</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Statut</label>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">Tous</option>
+                        <option value="success" {% if filters.status == 'success' %}selected{% endif %}>Succès</option>
+                        <option value="failed" {% if filters.status == 'failed' %}selected{% endif %}>Échecs</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Utilisateur</label>
+                    <input type="text" name="username" class="form-control form-control-sm" 
+                           placeholder="Filtrer par utilisateur" value="{{ filters.username }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">IP</label>
+                    <input type="text" name="ip" class="form-control form-control-sm" 
+                           placeholder="Filtrer par IP" value="{{ filters.ip }}">
+                </div>
+                
+                <div class="col-12">
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'accounts:login_attempts' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x-circle me-1"></i> Réinitialiser
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-search me-1"></i> Filtrer
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tableau -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Historique des tentatives</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="150">Date/Heure</th>
+                            <th>Utilisateur</th>
+                            <th>Adresse IP</th>
+                            <th width="100">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attempt in page_obj %}
+                        <tr>
+                            <td>
+                                <div class="small text-muted">{{ attempt.timestamp|date:"d/m/Y" }}</div>
+                                <div class="small">{{ attempt.timestamp|time:"H:i:s" }}</div>
+                            </td>
+                            <td>{{ attempt.username }}</td>
+                            <td><code>{{ attempt.ip_address }}</code></td>
+                            <td>
+                                {% if attempt.successful %}
+                                    <span class="badge bg-success">Succès</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Échec</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                Aucune tentative enregistrée
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="card-footer">
+            <nav aria-label="Navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    code {
+        background: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.9em;
+    }
+</style>
+{% endblock %}

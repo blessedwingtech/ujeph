@@ -1,0 +1,581 @@
+{% extends 'base.html' %}
+{% block title %}Créer un Professeur - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-1">
+                <i class="bi bi-person-plus"></i> Ajouter un Professeur
+            </h3>
+            <p class="text-muted mb-0">Remplissez le formulaire ci-dessous pour ajouter un nouveau membre du corps enseignant.</p>
+        </div>
+        <a href="{% url 'accounts:liste_professeurs' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+
+    <!-- Messages Django -->
+    <!-- {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+            <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-triangle-fill{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %} -->
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <!-- Informations sur la création -->
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Information importante :</strong> Le mot de passe par défaut sera "1234". Le professeur devra changer son mot de passe à sa première connexion.
+            </div>
+            
+            <form method="post" novalidate id="professorForm">
+                {% csrf_token %}
+                
+                <!-- SECTION 1: Informations personnelles -->
+                <div class="mb-5">
+                    <h5 class="border-bottom pb-2 mb-4">
+                        <i class="bi bi-person-vcard text-primary"></i>
+                        Informations personnelles
+                    </h5>
+                    
+                    <div class="row g-3">
+                        <!-- Username -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nom d'utilisateur *</label>
+                            {{ user_form.username }}
+                            <div class="form-text">
+                                <span id="usernameIcon">ⓘ</span>
+                                <span id="usernameMessage">Doit commencer par une lettre ou _</span>
+                            </div>
+                            {% if user_form.username.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in user_form.username.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email *</label>
+                            {{ user_form.email }}
+                            <div class="form-text">
+                                <span id="emailIcon">ⓘ</span>
+                                <span id="emailMessage">Format: exemple@domaine.com</span>
+                            </div>
+                            {% if user_form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in user_form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mt-3">
+                        <!-- Prénom -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Prénom *</label>
+                            {{ user_form.first_name }}
+                            <div class="form-text">
+                                <span id="firstNameIcon">ⓘ</span>
+                                <span id="firstNameMessage">Lettres seulement, majuscule en début</span>
+                            </div>
+                            {% if user_form.first_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in user_form.first_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Nom -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nom *</label>
+                            {{ user_form.last_name }}
+                            <div class="form-text">
+                                <span id="lastNameIcon">ⓘ</span>
+                                <span id="lastNameMessage">Lettres seulement, majuscule en début</span>
+                            </div>
+                            {% if user_form.last_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in user_form.last_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mt-3">
+                        <!-- Téléphone (dans UserForm) -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Téléphone *</label>
+                            {{ user_form.telephone }}
+                            <div class="form-text">
+                                <span id="phoneIcon">ⓘ</span>
+                                <span id="phoneMessage">Format: +509XXXXXXXX</span>
+                            </div>
+                            {% if user_form.telephone.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in user_form.telephone.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: Informations professionnelles -->
+                <div class="mb-4">
+                    <h5 class="border-bottom pb-2 mb-4">
+                        <i class="bi bi-briefcase text-primary"></i>
+                        Informations professionnelles
+                    </h5>
+                    
+                    <div class="row g-3">
+                        <!-- Spécialité -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Spécialité *</label>
+                            {{ prof_form.specialite }}
+                            {% if prof_form.specialite.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in prof_form.specialite.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                         
+                    </div>
+                    
+                    <div class="row g-3 mt-3">
+                        <!-- Date d'embauche -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Date d'embauche *</label>
+                            {{ prof_form.date_embauche }}
+                            <div class="form-text">
+                                <span id="date_embaucheIcon">ⓘ</span>
+                                <span id="date_embaucheMessage">Format: JJ/MM/AAAA</span>
+                            </div>
+                            {% if prof_form.date_embauche.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in prof_form.date_embauche.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Statut -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Statut *</label>
+                            {{ prof_form.statut }}
+                            {% if prof_form.statut.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in prof_form.statut.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Mot de passe (caché mais présent pour la validation) -->
+                <input type="hidden" name="password" value="1234">
+
+                <!-- Boutons d'action -->
+                <div class="d-flex justify-content-between align-items-center pt-4 border-top">
+                    <a href="{% url 'accounts:liste_professeurs' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </a>
+                    <div>
+                        <button type="reset" class="btn btn-outline-warning me-2">
+                            <i class="bi bi-arrow-clockwise"></i> Réinitialiser
+                        </button>
+                        <button type="submit" class="btn btn-success" id="submitBtn">
+                            <i class="bi bi-check-circle"></i> Créer le professeur
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validation du username en temps réel
+function validateUsername(username) {
+    const icon = document.getElementById('usernameIcon');
+    const message = document.getElementById('usernameMessage');
+    const usernameInput = document.querySelector('#id_username');
+    
+    if (!usernameInput) return;
+    
+    username = username.trim();
+    
+    if (username.length === 0) {
+        icon.textContent = 'ⓘ';
+        message.textContent = 'Doit commencer par une lettre ou _';
+        icon.className = 'text-info';
+        usernameInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    // Validation format (lettre ou underscore au début)
+    const isValidFormat = /^[a-zA-Z_].*$/.test(username);
+    if (!isValidFormat) {
+        icon.textContent = '✗';
+        message.textContent = 'Doit commencer par une lettre (a-z) ou underscore (_)';
+        icon.className = 'text-danger';
+        usernameInput.classList.add('is-invalid');
+        usernameInput.classList.remove('is-valid');
+        return;
+    }
+    
+    if (username.length < 3) {
+        icon.textContent = '⚠';
+        message.textContent = 'Minimum 3 caractères';
+        icon.className = 'text-warning';
+        usernameInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    // Format valide, vérifier disponibilité
+    checkUsernameAvailability(username);
+}
+
+function checkUsernameAvailability(username) {
+    const icon = document.getElementById('usernameIcon');
+    const message = document.getElementById('usernameMessage');
+    const usernameInput = document.querySelector('#id_username');
+    
+    if (!usernameInput || !icon || !message) return;
+    
+    // Afficher état de chargement
+    icon.textContent = '⏳';
+    message.textContent = 'Vérification...';
+    icon.className = 'text-info';
+    
+    // Enlever les classes de validation précédentes
+    usernameInput.classList.remove('is-invalid', 'is-valid');
+    
+    fetch('{% url "accounts:check_username" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({username: username})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.exists) {
+            // Nom d'utilisateur déjà pris
+            icon.textContent = '✗';
+            message.textContent = 'Ce nom d\'utilisateur est déjà pris';
+            icon.className = 'text-danger';
+            usernameInput.classList.add('is-invalid');
+        } else if (data.valid === false) {
+            // Nom d'utilisateur invalide (caractères spéciaux, etc.)
+            icon.textContent = '✗';
+            message.textContent = data.message || 'Nom d\'utilisateur invalide';
+            icon.className = 'text-danger';
+            usernameInput.classList.add('is-invalid');
+        } else {
+            // Nom d'utilisateur disponible et valide
+            icon.textContent = '✓';
+            message.textContent = 'Nom d\'utilisateur disponible';
+            icon.className = 'text-success';
+            usernameInput.classList.add('is-valid');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur vérification username:', error);
+        icon.textContent = '⚠';
+        message.textContent = 'Impossible de vérifier (erreur réseau)';
+        icon.className = 'text-warning';
+        // Ne pas changer les classes de validation en cas d'erreur
+    });
+}
+// Validation de l'email
+function validateEmail(email) {
+    const icon = document.getElementById('emailIcon');
+    const message = document.getElementById('emailMessage');
+    const emailInput = document.querySelector('#id_email');
+    
+    if (!emailInput) return;
+    
+    email = email.trim();
+    
+    if (email.length === 0) {
+        icon.textContent = 'ⓘ';
+        message.textContent = 'Format: exemple@domaine.com';
+        icon.className = 'text-info';
+        emailInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    // Validation format email
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+        icon.textContent = '✗';
+        message.textContent = 'Format email invalide';
+        icon.className = 'text-danger';
+        emailInput.classList.add('is-invalid');
+        emailInput.classList.remove('is-valid');
+        return;
+    }
+    
+    icon.textContent = '✓';
+    message.textContent = 'Format email valide';
+    icon.className = 'text-success';
+    emailInput.classList.add('is-valid');
+    emailInput.classList.remove('is-invalid');
+}
+
+// Validation des noms et prénoms
+function validateName(name, fieldId) {
+    let icon, message, input;
+    
+    if (fieldId === 'first_name') {
+        icon = document.getElementById('firstNameIcon');
+        message = document.getElementById('firstNameMessage');
+        input = document.querySelector('#id_first_name');
+    } else if (fieldId === 'last_name') {
+        icon = document.getElementById('lastNameIcon');
+        message = document.getElementById('lastNameMessage');
+        input = document.querySelector('#id_last_name');
+    } else {
+        return;
+    }
+    
+    if (!input || !icon || !message) return;
+    
+    name = name.trim();
+    
+    if (name.length === 0) {
+        icon.textContent = 'ⓘ';
+        message.textContent = 'Lettres seulement, majuscule en début';
+        icon.className = 'text-info';
+        input.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    // Validation: lettres seulement (et espaces, tirets, apostrophes pour les noms composés)
+    const nameRegex = /^[A-ZÀ-ÿ][a-zà-ÿ]*([\s\-'][A-ZÀ-ÿ][a-zà-ÿ]*)*$/;
+    
+    if (!nameRegex.test(name)) {
+        icon.textContent = '✗';
+        message.textContent = 'Lettres seulement, commence par une majuscule';
+        icon.className = 'text-danger';
+        input.classList.add('is-invalid');
+        input.classList.remove('is-valid');
+        return;
+    }
+    
+    icon.textContent = '✓';
+    message.textContent = 'Format valide';
+    icon.className = 'text-success';
+    input.classList.add('is-valid');
+    input.classList.remove('is-invalid');
+}
+
+// Validation du téléphone
+function validatePhone(phone) {
+    const icon = document.getElementById('phoneIcon');
+    const message = document.getElementById('phoneMessage');
+    const phoneInput = document.querySelector('#id_telephone');
+    
+    if (!phoneInput || !icon || !message) return;
+    
+    phone = phone.trim();
+    
+    if (phone.length === 0) {
+        icon.textContent = 'ⓘ';
+        message.textContent = 'Format: +509XXXXXXXX';
+        icon.className = 'text-info';
+        phoneInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    // Validation format téléphone Haïtien
+    const phoneRegex = /^\+?[1-9]\d{7,14}$/;
+    
+    if (!phoneRegex.test(phone)) {
+        icon.textContent = '✗';
+        message.textContent = 'Format: +509XXXXXXXX';
+        icon.className = 'text-danger';
+        phoneInput.classList.add('is-invalid');
+        phoneInput.classList.remove('is-valid');
+        return;
+    }
+    
+    icon.textContent = '✓';
+    message.textContent = 'Format téléphone valide';
+    icon.className = 'text-success';
+    phoneInput.classList.add('is-valid');
+    phoneInput.classList.remove('is-invalid');
+}
+
+// Validation de la date d'embauche
+function validateDateEmbauche(date) {
+    const icon = document.getElementById('date_embaucheIcon');
+    const message = document.getElementById('date_embaucheMessage');
+    const dateInput = document.querySelector('#id_date_embauche');
+    
+    if (!dateInput || !icon || !message) return;
+    
+    date = date.trim();
+    
+    if (date.length === 0) {
+        icon.textContent = 'ⓘ';
+        message.textContent = 'Format: JJ/MM/AAAA';
+        icon.className = 'text-info';
+        dateInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    // Si c'est un input type="date", le format est différent
+    if (dateInput.type === 'date') {
+        // Format YYYY-MM-DD pour input type="date"
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(date)) {
+            icon.textContent = '✗';
+            message.textContent = 'Format: AAAA-MM-JJ';
+            icon.className = 'text-danger';
+            dateInput.classList.add('is-invalid');
+            dateInput.classList.remove('is-valid');
+            return;
+        }
+        
+        // Date valide
+        icon.textContent = '✓';
+        message.textContent = 'Date valide';
+        icon.className = 'text-success';
+        dateInput.classList.add('is-valid');
+        dateInput.classList.remove('is-invalid');
+        return;
+    }
+    
+    // Sinon, format JJ/MM/AAAA pour input type="text"
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    
+    if (!dateRegex.test(date)) {
+        icon.textContent = '✗';
+        message.textContent = 'Format: JJ/MM/AAAA';
+        icon.className = 'text-danger';
+        dateInput.classList.add('is-invalid');
+        dateInput.classList.remove('is-valid');
+        return;
+    }
+    
+    // Vérification basique de la date
+    const parts = date.split('/');
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+    
+    if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > new Date().getFullYear()) {
+        icon.textContent = '✗';
+        message.textContent = 'Date invalide';
+        icon.className = 'text-danger';
+        dateInput.classList.add('is-invalid');
+        dateInput.classList.remove('is-valid');
+        return;
+    }
+    
+    icon.textContent = '✓';
+    message.textContent = 'Date valide';
+    icon.className = 'text-success';
+    dateInput.classList.add('is-valid');
+    dateInput.classList.remove('is-invalid');
+}
+
+// Écouter les changements dans les champs
+document.addEventListener('DOMContentLoaded', function() {
+    // Username validation
+    const usernameInput = document.querySelector('#id_username');
+    if (usernameInput) {
+        usernameInput.addEventListener('input', function() {
+            validateUsername(this.value);
+        });
+        if (usernameInput.value) validateUsername(usernameInput.value);
+    }
+    
+    // Email validation
+    const emailInput = document.querySelector('#id_email');
+    if (emailInput) {
+        emailInput.addEventListener('input', function() {
+            validateEmail(this.value);
+        });
+        if (emailInput.value) validateEmail(emailInput.value);
+    }
+    
+    // First name validation
+    const firstNameInput = document.querySelector('#id_first_name');
+    if (firstNameInput) {
+        firstNameInput.addEventListener('input', function() {
+            validateName(this.value, 'first_name');
+        });
+        if (firstNameInput.value) validateName(firstNameInput.value, 'first_name');
+    }
+    
+    // Last name validation
+    const lastNameInput = document.querySelector('#id_last_name');
+    if (lastNameInput) {
+        lastNameInput.addEventListener('input', function() {
+            validateName(this.value, 'last_name');
+        });
+        if (lastNameInput.value) validateName(lastNameInput.value, 'last_name');
+    }
+    
+    // Phone validation
+    const phoneInput = document.querySelector('#id_telephone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            validatePhone(this.value);
+        });
+        if (phoneInput.value) validatePhone(phoneInput.value);
+    }
+    
+    // Date embauche validation
+    const dateEmbaucheInput = document.querySelector('#id_date_embauche');
+    if (dateEmbaucheInput) {
+        dateEmbaucheInput.addEventListener('input', function() {
+            validateDateEmbauche(this.value);
+        });
+        if (dateEmbaucheInput.value) validateDateEmbauche(dateEmbaucheInput.value);
+        
+        // Ajouter placeholder selon le type
+        if (!dateEmbaucheInput.placeholder) {
+            if (dateEmbaucheInput.type === 'date') {
+                dateEmbaucheInput.placeholder = 'AAAA-MM-JJ';
+            } else {
+                dateEmbaucheInput.placeholder = 'JJ/MM/AAAA';
+            }
+        }
+    }
+    
+    // Focus sur le premier champ
+    if (usernameInput) usernameInput.focus();
+});
+</script>
+{% endblock %}

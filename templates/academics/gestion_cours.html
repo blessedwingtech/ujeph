@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des Cours - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- 🧭 Titre principal -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3>📚 Gestion de l’Offre Académique</h3>
+            <p class="text-muted mb-0">Administration des cours par faculté et niveau</p>
+        </div>
+        <div>
+            <a href="{% url 'academics:creer_cours' %}" class="btn btn-success me-2">
+                <i class="bi bi-plus-circle"></i> Ajouter un Cours
+            </a>
+            <a href="{% url 'academics:liste_facultes' %}" class="btn btn-primary">
+                <i class="bi bi-building"></i> Gérer les Facultés
+            </a>
+        </div>
+    </div>
+
+    <!-- ✅ Messages globaux -->
+    <!-- {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %} -->
+
+    <!-- 📘 Tableau principal -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Liste des Cours</h5>
+            <input type="text" id="searchInput"
+       class="form-control form-control-sm"
+       placeholder="🔍 Rechercher un cours (code, intitulé, faculté, professeur)...">
+
+        </div>
+
+        <div class="card-body">
+            {% if cours %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Code</th>
+                                <th scope="col">Intitulé</th>
+                                <th scope="col">Faculté</th>
+                                <th scope="col">Niveau</th>
+                                <th scope="col">Semestre</th>
+                                <th scope="col">Crédits</th>
+                                <th scope="col">Professeur</th>
+                                <th scope="col" class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            {% for c in cours %}
+                            <tr>
+                                <td><span class="fw-semibold">{{ c.code }}</span></td>
+                                <td>{{ c.intitule }}</td>
+                                <td>{{ c.faculte.nom }}</td>
+                                <td>{{ c.get_niveau_display|default:c.niveau }}</td>
+                                <td>{{ c.get_semestre_display|default:c.semestre }}</td>
+                                <td>{{ c.credits }}</td>
+                                <td>
+                                    {% if c.professeur %}
+                                        {{ c.professeur.get_full_name }}
+                                    {% else %}
+                                        <span class="text-muted fst-italic">Non assigné</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'academics:modifier_cours' c.id %}" 
+                                       class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <a href="{% url 'academics:supprimer_cours' c.id %}" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('Supprimer ce cours ? Cette action est irréversible.');">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-warning text-center mt-3">
+                    <h5>⚠️ Aucun cours trouvé</h5>
+                    <p>Aucun cours créé. Commencez par ajouter de nouveaux cours.</p>
+                </div>
+            {% endif %}
+        </div> 
+        <a id="exportBtn" href="{% url 'academics:export_cours_csv' %}?q={{ request.GET.q|default:'' }}"
+        class="btn btn-outline-success btn-sm">
+            <i class="fas fa-file-export me-1"></i> Exporter CSV
+        </a>
+
+        <script>
+        const searchInput = document.getElementById('searchInput');
+        const exportBtn = document.getElementById('exportBtn');
+
+        searchInput.addEventListener('input', function() {
+            const q = encodeURIComponent(this.value.trim());
+            exportBtn.href = `{% url 'academics:export_cours_csv' %}?q=${q}`;
+        });
+        </script>
+
+
+        {% if cours.has_other_pages %}
+        <div class="card-footer d-flex justify-content-center">
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    {% if cours.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ cours.previous_page_number }}">←</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">←</span></li>
+                    {% endif %}
+
+                    {% for num in cours.paginator.page_range %}
+                        {% if num == cours.number %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if cours.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ cours.next_page_number }}">→</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">→</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const input = document.getElementById('searchInput');
+    const tableBody = document.getElementById('tableBody');
+
+    if (!input || !tableBody) {
+        console.error("❌ Recherche cours admin : élément manquant");
+        return;
+    }
+
+    console.log("✅ Recherche temps réel cours (admin)");
+
+    let timeout = null;
+
+    input.addEventListener('keyup', function () {
+        clearTimeout(timeout);
+
+        timeout = setTimeout(() => {
+            const query = input.value.trim();
+
+            fetch("{% url 'academics:recherche_cours_ajax' %}?q=" + query)
+                .then(res => res.json())
+                .then(data => {
+
+                    tableBody.innerHTML = '';
+
+                    if (data.cours.length === 0) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">
+                                    Aucun cours trouvé
+                                </td>
+                            </tr>`;
+                        return;
+                    }
+
+                    data.cours.forEach(c => {
+                        tableBody.innerHTML += `
+                            <tr>
+                                <td><span class="fw-semibold">${c.code}</span></td>
+                                <td>${c.intitule}</td>
+                                <td>${c.faculte}</td>
+                                <td>${c.niveau}</td>
+                                <td>${c.semestre}</td>
+                                <td>${c.credits}</td>
+                                <td>${c.professeur}</td>
+                                <td class="text-end">
+                                    <a href="/admin/academics/cours/${c.id}/change/"
+                                       class="btn btn-sm btn-outline-primary me-1">
+                                        ✏️
+                                    </a>
+                                    <a href="/admin/academics/cours/${c.id}/delete/"
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('Supprimer ce cours ?');">
+                                        🗑️
+                                    </a>
+                                </td>
+                            </tr>`;
+                    });
+                })
+                .catch(err => console.error("❌ Erreur AJAX :", err));
+
+        }, 300);
+    });
+
+});
+</script>
+
+{% endblock %}

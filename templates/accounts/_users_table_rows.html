@@ -1,0 +1,167 @@
+{% if utilisateurs %}
+    {% for user in utilisateurs %}
+    <tr>
+        <td>
+            <div class="d-flex align-items-center">
+                <div class="avatar me-3">
+                    <i class="bi bi-person-circle fs-3 text-muted"></i>
+                </div>
+                <div>
+                    <strong>{{ user.get_full_name|default:user.username }}</strong><br>
+                    <small class="text-muted">@{{ user.username }}</small>
+                </div>
+            </div>
+        </td>
+
+        <td>
+            <span class="badge
+                {% if user.role == 'admin' %}bg-dark
+                {% elif user.role == 'prof' %}bg-info
+                {% else %}bg-secondary{% endif %}">
+                {{ user.get_role_display }}
+            </span>
+        </td>
+
+        <td>
+            {% if user.email %}
+                <small>{{ user.email }}</small>
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
+
+        <td>
+            <small>{{ user.date_joined|date:"d/m/y" }}</small>
+        </td>
+
+        <td>
+            {% if user.is_active %}
+            <span class="badge bg-success">
+                <i class="bi bi-check"></i> Actif
+            </span>
+            {% else %}
+            <span class="badge bg-danger">
+                <i class="bi bi-x"></i> Inactif
+            </span>
+            {% endif %}
+        </td>
+
+        <td>
+            <div class="btn-group btn-group-sm">
+                <a href="{% url 'accounts:detail_utilisateur' user.id %}"
+                   class="btn btn-outline-primary" title="Détails">
+                    <i class="bi bi-eye"></i>
+                </a>
+
+                <form method="post"
+                    action="{% url 'accounts:toggle_activation' user.id %}"
+                    class="d-inline js-toggle-user"
+                    data-username="{{ user.username }}"
+                    data-action="{% if user.is_active %}désactiver{% else %}activer{% endif %}">
+                    {% csrf_token %}
+                    {% if user.is_active %}
+                    <button type="submit" class="btn btn-outline-danger" title="Désactiver">
+                        <i class="bi bi-person-x"></i>
+                    </button>
+                    {% else %}
+                    <button type="submit" class="btn btn-outline-success" title="Activer">
+                        <i class="bi bi-person-check"></i>
+                    </button>
+                    {% endif %}
+                </form>
+
+            </div>
+        </td>
+    </tr>
+    <script>
+document.addEventListener('click', function (e) {
+    const form = e.target.closest('.js-toggle-user');
+    if (!form) return;
+
+    e.preventDefault();
+
+    const username = form.dataset.username;
+    const action = form.dataset.action;
+
+    Swal.fire({
+        title: 'Confirmation requise',
+        html: `
+            <p>Voulez-vous vraiment <strong>${action}</strong> l’utilisateur :</p>
+            <p class="fw-bold text-primary">${username}</p>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: `Oui, ${action}`,
+        cancelButtonText: 'Annuler',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+});
+</script>
+
+    {% endfor %}
+
+    <!-- Pagination AJAX -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <tr>
+        <td colspan="6" class="bg-light">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <button class="page-link"
+                                onclick="loadPage({{ page_obj.previous_page_number }})">
+                            <i class="bi bi-chevron-left"></i> Précédent
+                        </button>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <button class="page-link"
+                                    onclick="loadPage({{ num }})">
+                                {{ num }}
+                            </button>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <button class="page-link"
+                                onclick="loadPage({{ page_obj.next_page_number }})">
+                            Suivant <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </li>
+                    {% endif %}
+
+                </ul>
+            </nav>
+        </td>
+    </tr>
+    {% endif %}
+
+{% else %}
+<tr>
+    <td colspan="6" class="text-center py-5">
+        <i class="bi bi-people fs-1 text-muted"></i>
+        <h5 class="text-muted mt-3">Aucun utilisateur trouvé</h5>
+
+        {% if selected_role or selected_statut or search_query %}
+        <p class="text-muted">Essayez d'autres critères de recherche</p>
+        <button onclick="resetFilters()" class="btn btn-sm btn-outline-primary">
+            Réinitialiser les filtres
+        </button>
+        {% endif %}
+    </td>
+</tr>
+{% endif %}

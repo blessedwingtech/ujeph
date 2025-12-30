@@ -1,0 +1,776 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestion des Annonces - SG-UJEPH{% endblock %}
+
+{% block extra_head %}
+<style>
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 20px;
+    }
+    
+    .annonce-actions {
+        min-width: 200px;
+    }
+    
+    .search-box {
+        max-width: 300px;
+    }
+    
+    .filters-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .type-filter-btn {
+        transition: all 0.2s;
+    }
+    
+    .type-filter-btn.active {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 51, 102, 0.05);
+    }
+    
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: #6c757d;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        opacity: 0.3;
+        margin-bottom: 20px;
+    }
+    
+    .export-btn {
+        border-radius: 20px;
+        padding: 8px 20px;
+    }
+    
+    .badge-type {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 12px;
+    }
+    
+    .badge-type-general { background-color: #6f42c1; color: white; }
+    .badge-type-urgence { background-color: #dc3545; color: white; }
+    .badge-type-cours { background-color: #20c997; color: white; }
+    .badge-type-examen { background-color: #fd7e14; color: white; }
+    .badge-type-autre { background-color: #6c757d; color: white; }
+</style>
+
+<style> 
+    #liveSearchResults {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    #liveSearchResults a {
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    #liveSearchResults a:hover {
+        background-color: #f8f9fa;
+    }
+    
+    #liveSearchResults .hover-bg:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s;
+    }
+    
+    /* Amélioration de l'input */
+    #liveSearchInput:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(0, 51, 102, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-2">
+                <i class="fas fa-bullhorn text-primary me-2"></i>
+                Gestion des Annonces
+            </h1>
+            <p class="text-muted mb-0">Créez, modifiez et gérez les annonces du système</p>
+        </div>
+        <div>
+            <a href="{% url 'academics:creer_annonce' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Nouvelle annonce
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="filters-card">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex flex-wrap gap-2 mb-3 mb-md-0">
+                    <button class="btn type-filter-btn btn-outline-secondary {% if not request.GET.type %}active{% endif %}" 
+                            onclick="window.location=`{% url 'academics:liste_annonces' %}`">
+                        Toutes
+                    </button>
+                    {% for type_key, type_label in type_choices %}
+                    <button class="btn type-filter-btn btn-outline-secondary {% if request.GET.type == type_key %}active{% endif %}"
+                            onclick="window.location=`{% url 'academics:liste_annonces' %}?type={{ type_key }}`">
+                        {{ type_label }}
+                    </button>
+                    {% endfor %}
+                    
+                    <div class="dropdown d-inline-block">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown">
+                            Statut
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'academics:liste_annonces' %}?status=active">Actives</a></li>
+                            <li><a class="dropdown-item" href="{% url 'academics:liste_annonces' %}?status=expired">Expirées</a></li>
+                            <li><a class="dropdown-item" href="{% url 'academics:liste_annonces' %}?status=draft">Brouillons</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4"> 
+                <div class="position-relative">
+                    <div class="input-group">
+                        <input type="text" 
+                            id="liveSearchInput" 
+                            class="form-control" 
+                            placeholder="Rechercher en temps réel..."
+                            value="{{ request.GET.search|default:'' }}"
+                            autocomplete="off">
+                        <button class="btn btn-primary" type="button" id="searchButton">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        {% if request.GET.search %}
+                        <a href="{% url 'academics:liste_annonces' %}{% if request.GET.type %}?type={{ request.GET.type }}{% endif %}{% if request.GET.status %}{% if request.GET.type %}&{% else %}?{% endif %}status={{ request.GET.status }}{% endif %}" 
+                        class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Résultats en temps réel -->
+                    <div id="liveSearchResults" class="position-absolute w-100 bg-white shadow-lg rounded mt-1" 
+                        style="display: none; z-index: 1050; max-height: 400px; overflow-y: auto;">
+                        <div class="p-3">
+                            <div class="text-center">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Chargement...</span>
+                                </div>
+                                <span class="ms-2">Recherche en cours...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Champ caché pour la recherche traditionnelle -->
+                    <input type="hidden" name="search" id="hiddenSearch" value="{{ request.GET.search|default:'' }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Total annonces</h6>
+                    <h3 class="mb-0">{{ total_annonces }}</h3>
+                </div>
+                <div class="feature-icon bg-primary bg-opacity-10">
+                    <i class="fas fa-bullhorn text-primary"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Actives</h6>
+                    <h3 class="mb-0">{{ active_annonces }}</h3>
+                </div>
+                <div class="feature-icon bg-success bg-opacity-10">
+                    <i class="fas fa-check-circle text-success"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Expirées</h6>
+                    <h3 class="mb-0">{{ expired_annonces }}</h3>
+                </div>
+                <div class="feature-icon bg-warning bg-opacity-10">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Urgentes</h6>
+                    <h3 class="mb-0">{{ urgent_annonces|default:"0" }}</h3>
+                </div>
+                <div class="feature-icon bg-danger bg-opacity-10">
+                    <i class="fas fa-exclamation text-danger"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques supplémentaires (optionnelles) -->
+<div class="row mb-4">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="stats-card stats-card-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Brouillons</h6>
+                    <h4 class="mb-0">{{ draft_annonces|default:"0" }}</h4>
+                </div>
+                <div class="feature-icon bg-secondary bg-opacity-10">
+                    <i class="fas fa-edit text-secondary"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="stats-card stats-card-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Importantes</h6>
+                    <h4 class="mb-0">{{ important_annonces|default:"0" }}</h4>
+                </div>
+                <div class="feature-icon bg-info bg-opacity-10">
+                    <i class="fas fa-star text-info"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="stats-card stats-card-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-1">Sans expiration</h6>
+                    <h4 class="mb-0">{{ no_expiration_annonces|default:"0" }}</h4>
+                </div>
+                <div class="feature-icon bg-info bg-opacity-10">
+                    <i class="fas fa-infinity text-info"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- Tableau des annonces -->
+    <div class="card">
+        <div class="card-body">
+            {% if page_obj.object_list %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Type</th>
+                            <th>Date publication</th>
+                            <th>Destinataires</th>
+                            <th>Statut</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for annonce in page_obj %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if annonce.est_important %}
+                                    <span class="badge bg-warning me-2" title="Importante">
+                                        <i class="fas fa-star"></i>
+                                    </span>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ annonce.titre|truncatechars:50 }}</strong>
+                                        {% if annonce.faculte %}
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="fas fa-university"></i> {{ annonce.faculte.nom }}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-type badge-type-{{ annonce.type_annonce }}">
+                                    <i class="fas fa-{{ annonce.get_icon }} me-1"></i>
+                                    {{ annonce.get_type_annonce_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div>{{ annonce.date_publication|date:"d/m/Y" }}</div>
+                                <small class="text-muted">{{ annonce.date_publication|date:"H:i" }}</small>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% if annonce.destinataire_tous %}
+                                    <span class="badge bg-secondary">Tous</span>
+                                    {% endif %}
+                                    {% if annonce.destinataire_etudiants %}
+                                    <span class="badge bg-primary">Étudiants</span>
+                                    {% endif %}
+                                    {% if annonce.destinataire_professeurs %}
+                                    <span class="badge bg-success">Professeurs</span>
+                                    {% endif %}
+                                    {% if annonce.destinataire_admins %}
+                                    <span class="badge bg-dark">Admins</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if annonce.est_publie %}
+                                    {% if annonce.date_expiration %}
+                                        {% if annonce.date_expiration < now %}
+                                            <!-- Annonce publiée mais expirée -->
+                                            <span class="status-badge bg-warning text-dark">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Expirée
+                                            </span>
+                                        {% else %}
+                                            <!-- Annonce publiée et non expirée -->
+                                            <span class="status-badge bg-success text-white">
+                                                <i class="fas fa-check-circle me-1"></i>Active
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <!-- Annonce publiée sans date d'expiration (toujours active) -->
+                                        <span class="status-badge bg-success text-white">
+                                            <i class="fas fa-infinity me-1"></i>Active
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Annonce non publiée (brouillon) -->
+                                    <span class="status-badge bg-secondary text-white">
+                                        <i class="fas fa-edit me-1"></i>Brouillon
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'academics:editer_annonce' annonce.pk %}" 
+                                       class="btn btn-sm btn-outline-primary" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    <a href="{% url 'academics:toggle_publie' annonce.pk %}" 
+                                       class="btn btn-sm {% if annonce.est_publie %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                                       title="{% if annonce.est_publie %}Dépublier{% else %}Publier{% endif %}">
+                                        <i class="fas {% if annonce.est_publie %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+                                    </a>
+                                    
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ annonce.pk }}"
+                                            title="Supprimer">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Modal de suppression -->
+                        <div class="modal fade" id="deleteModal{{ annonce.pk }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Confirmer la suppression</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Êtes-vous sûr de vouloir supprimer l'annonce <strong>"{{ annonce.titre }}"</strong> ?</p>
+                                        <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> Cette action est irréversible.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                        <form method="POST" action="{% url 'academics:supprimer_annonce' annonce.pk %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger">Supprimer</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <!-- État vide -->
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                <h4 class="mb-3">Aucune annonce trouvée</h4>
+                <p class="text-muted mb-4">
+                    {% if request.GET.search %}
+                    Aucune annonce ne correspond à votre recherche "{{ request.GET.search }}".
+                    {% else %}
+                    Commencez par créer votre première annonce pour informer la communauté.
+                    {% endif %}
+                </p>
+                <a href="{% url 'academics:creer_annonce' %}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>Créer une annonce
+                </a>
+                {% if request.GET.search or request.GET.type %}
+                <a href="{% url 'academics:liste_annonces' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Effacer les filtres
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bouton d'export -->
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <div hidden>
+            <a href="{% url 'academics:export_annonces' %}" class="btn btn-outline-success export-btn">
+                <i class="fas fa-file-export me-2"></i>Exporter en CSV
+            </a>
+        </div>
+        <div class="text-muted">
+            Affichage de {{ page_obj.start_index }} à {{ page_obj.end_index }} sur {{ total_annonces }} annonces
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert').alert('close');
+        }, 5000);
+        
+        // Highlight active filter in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const activeType = urlParams.get('type');
+        const activeStatus = urlParams.get('status');
+        
+        if (activeType) {
+            document.querySelectorAll('.type-filter-btn').forEach(btn => {
+                if (btn.textContent.trim() === activeType) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+        
+        // Confirmation avant suppression
+        document.querySelectorAll('form[action*="supprimer"]').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    });
+</script>
+ 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const liveSearchInput = document.getElementById('liveSearchInput');
+        const liveSearchResults = document.getElementById('liveSearchResults');
+        const hiddenSearch = document.getElementById('hiddenSearch');
+        const searchButton = document.getElementById('searchButton');
+        let searchTimeout = null;
+        
+        // Fonction pour effectuer la recherche AJAX
+        function performLiveSearch(query) {
+            if (query.length < 2) {
+                liveSearchResults.style.display = 'none';
+                return;
+            }
+            
+            // Afficher le loader
+            liveSearchResults.innerHTML = `
+                <div class="p-3">
+                    <div class="text-center">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Chargement...</span>
+                        </div>
+                        <span class="ms-2">Recherche de "${query}"...</span>
+                    </div>
+                </div>
+            `;
+            liveSearchResults.style.display = 'block';
+            
+            // Récupérer les filtres actuels
+            const urlParams = new URLSearchParams(window.location.search);
+            const typeFilter = urlParams.get('type') || '';
+            const statusFilter = urlParams.get('status') || '';
+            
+            // Effectuer la requête AJAX
+            fetch(`{% url 'academics:liste_annonces' %}?search=${encodeURIComponent(query)}&type=${typeFilter}&status=${statusFilter}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displaySearchResults(data.annonces, query, data.total);
+                }
+            })
+            .catch(error => {
+                console.error('Erreur de recherche:', error);
+                liveSearchResults.innerHTML = `
+                    <div class="p-3">
+                        <div class="alert alert-danger mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Erreur lors de la recherche
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        // Fonction pour afficher les résultats
+        function displaySearchResults(annonces, query, total) {
+            if (annonces.length === 0) {
+                liveSearchResults.innerHTML = `
+                    <div class="p-3">
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Aucun résultat trouvé pour "${query}"
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let resultsHTML = `
+                <div class="p-2 border-bottom bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <strong>${total}</strong> résultat${total > 1 ? 's' : ''} trouvé${total > 1 ? 's' : ''}
+                        </small>
+                        <button type="button" class="btn btn-sm btn-link p-0" onclick="submitSearchForm('${query}')">
+                            <small>Voir tout</small>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            annonces.forEach(annonce => {
+                const badgeClass = {
+                    'general': 'primary',
+                    'academique': 'info',
+                    'urgence': 'danger',
+                    'evenement': 'success',
+                    'emploi': 'warning',
+                }[annonce.type_code] || 'secondary';
+                
+                const statusText = annonce.est_publie ? 
+                    (annonce.est_active ? 'Active' : 'Expirée') : 'Brouillon';
+                const statusClass = annonce.est_publie ? 
+                    (annonce.est_active ? 'success' : 'warning') : 'secondary';
+                
+                resultsHTML += `
+                    <a href="${annonce.edit_url}" class="text-decoration-none">
+                        <div class="p-3 border-bottom hover-bg">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="mb-1">
+                                        <span class="badge bg-${badgeClass} me-2">
+                                            ${annonce.type}
+                                        </span>
+                                        <span class="badge bg-${statusClass}">
+                                            ${statusText}
+                                        </span>
+                                        ${annonce.est_important ? '<span class="badge bg-warning text-dark ms-2"><i class="fas fa-star"></i></span>' : ''}
+                                    </div>
+                                    <h6 class="mb-1 text-dark">${annonce.titre}</h6>
+                                    <div class="small text-muted">
+                                        <div>
+                                            <i class="fas fa-user me-1"></i>${annonce.auteur}
+                                            ${annonce.faculte ? ` • <i class="fas fa-university me-1"></i>${annonce.faculte}` : ''}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-clock me-1"></i>${annonce.date_publication}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <i class="fas fa-chevron-right text-muted"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            });
+            
+            liveSearchResults.innerHTML = resultsHTML;
+            
+            // Ajouter du CSS pour le hover
+            const style = document.createElement('style');
+            style.textContent = `
+                .hover-bg:hover {
+                    background-color: #f8f9fa;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Écouter la saisie
+        // Améliorez l'écouteur d'input avec un meilleur debounce
+liveSearchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    hiddenSearch.value = query;
+    
+    // Cacher les résultats si query vide
+    if (query.length === 0) {
+        liveSearchResults.style.display = 'none';
+        return;
+    }
+    
+    // Attendre que l'utilisateur ait fini de taper
+    if (query.length >= 2) {
+        searchTimeout = setTimeout(() => {
+            console.log('Recherche lancée pour:', query);
+            performLiveSearch(query);
+        }, 500); // Augmentez à 500ms pour moins de requêtes
+    } else {
+        // Afficher un message pour encourager à taper plus
+        liveSearchResults.innerHTML = `
+            <div class="p-3">
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Tapez au moins 2 caractères pour lancer la recherche...
+                </div>
+            </div>
+        `;
+        liveSearchResults.style.display = 'block';
+    }
+});
+        
+        // Bouton de recherche traditionnel
+        searchButton.addEventListener('click', function() {
+            const query = liveSearchInput.value.trim();
+            if (query) {
+                submitSearchForm(query);
+            }
+        });
+        
+        // Recherche avec Enter
+        liveSearchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                if (query) {
+                    submitSearchForm(query);
+                }
+            }
+        });
+        
+        // Fermer les résultats quand on clique ailleurs
+        document.addEventListener('click', function(e) {
+            if (!liveSearchInput.contains(e.target) && !liveSearchResults.contains(e.target)) {
+                liveSearchResults.style.display = 'none';
+            }
+        });
+        
+        // Fonction pour soumettre le formulaire de recherche
+        window.submitSearchForm = function(query) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('search', query);
+            urlParams.delete('page'); // Retour à la page 1
+            
+            window.location.href = '{% url "academics:liste_annonces" %}?' + urlParams.toString();
+        };
+        
+        // Fonctions existantes pour les filtres
+        function updateFilter(filterName, filterValue) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentSearch = liveSearchInput.value.trim();
+            
+            if (currentSearch) {
+                urlParams.set('search', currentSearch);
+            }
+            
+            if (filterValue) {
+                urlParams.set(filterName, filterValue);
+            } else {
+                urlParams.delete(filterName);
+            }
+            
+            urlParams.delete('page');
+            window.location.href = '{% url "academics:liste_annonces" %}?' + urlParams.toString();
+        }
+        
+        // Autres fonctions existantes...
+    });
+</script>
+ 
+{% endblock %}

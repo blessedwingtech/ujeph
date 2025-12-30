@@ -1,0 +1,82 @@
+# Django
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+db.sqlite3
+media/
+staticfiles/
+
+# Environnements virtuels
+venv/
+env/
+.virtualenv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-*
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# MySQL (si vous utilisez des dumps)
+*.dump
+*.sql
+*.backup
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Logs
+*.log
+logs/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Static files collected
+static/
+
+# PyCharm
+.idea/
+
+# Database (MySQL/MariaDB specific)
+*.ibd
+*.frm
+*.MYD
+*.MYI
+*.ib_logfile*
+
+# Uploads utilisateurs (CRITIQUE !)
+annonces/fichiers/
+media/
+
+# Fichiers temporaires
+*.tmp
+*.temp
+
+# Fichier ls accidentel
+/ls
+
+# Backup files
+*.bak
+*~
+
+# Windows
+desktop.ini

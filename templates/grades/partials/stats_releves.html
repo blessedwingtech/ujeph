@@ -1,0 +1,42 @@
+<div class="stats-card">
+    <div class="row text-center">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="h2 text-primary">{{ stats.etudiants_actifs }}</div>
+                    <small class="text-muted">Étudiants Actifs</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="h2 text-success">{{ stats.notes_publiees }}</div>
+                    <small class="text-muted">Notes Publiées</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="h2 text-info">{{ stats.releves_existants }}</div>
+                    <small class="text-muted">Relevés Existants</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if stats.releves_a_mettre_a_jour %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong>Attention :</strong> {{ stats.releves_a_mettre_a_jour }} relevé(s) existant(s) seront mis à jour.
+    </div>
+    {% endif %}
+    
+    {% if stats.nouveaux_releves %}
+    <div class="alert alert-success">
+        <i class="bi bi-plus-circle"></i>
+        <strong>Création :</strong> {{ stats.nouveaux_releves }} nouveau(x) relevé(s) seront créé(s).
+    </div>
+    {% endif %}
+</div>

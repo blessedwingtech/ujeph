@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}Générer des Relevés de Notes - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="bi bi-file-earmark-plus"></i> Générer de Nouveaux Relevés</h4>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <div class="alert alert-info">
+                <h5><i class="bi bi-info-circle"></i> Information</h5>
+                <p>
+                    Cette action va générer des relevés de notes pour <strong>tous les étudiants actifs</strong>
+                    du semestre sélectionné. Les relevés existants seront mis à jour.
+                </p>
+                <p class="mb-0">
+                    <small>Note : Seules les notes <strong>publiées</strong> seront incluses dans les relevés.</small>
+                </p>
+            </div>
+
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="annee_academique" class="form-label">
+                            <i class="bi bi-calendar-check"></i> Année Académique
+                        </label>
+                        <select id="annee_academique" name="annee_academique" class="form-select" required>
+                            <option value="" disabled selected>Sélectionnez une année</option>
+                            <option value="{{ annee_courante }}">{{ annee_courante }} (Année courante)</option>
+                            <option value="2023-2024">2023-2024</option>
+                            <option value="2022-2023">2022-2023</option>
+                            <option value="2021-2022">2021-2022</option>
+                            <option value="2020-2021">2020-2021</option>
+                        </select>
+                        <div class="form-text">Format : 2023-2024</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="semestre" class="form-label">
+                            <i class="bi bi-calendar-month"></i> Semestre
+                        </label>
+                        <select id="semestre" name="semestre" class="form-select" required>
+                            <option value="" disabled selected>Sélectionnez un semestre</option>
+                            {% for code, nom in semestres %}
+                            <option value="{{ code }}">{{ nom }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Statistiques pré-génération -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6><i class="bi bi-graph-up"></i> Impact de l'opération :</h6>
+                                <ul class="mb-0">
+                                    <li>Nombre d'étudiants actifs : <span id="count-students">Calcul en cours...</span></li>
+                                    <li>Notes publiées disponibles : <span id="count-notes">Calcul en cours...</span></li>
+                                    <li>Relevés existants : <span id="count-existing">Calcul en cours...</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="mt-4 border-top pt-3">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'grades:gestion_releves' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Retour à la liste
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-outline-info me-2" id="btn-test">
+                                <i class="bi bi-search"></i> Simulation
+                            </button>
+                            <button type="submit" class="btn btn-success" id="btn-generate">
+                                <i class="bi bi-play-fill"></i> Lancer la Génération
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const anneeSelect = document.getElementById('annee_academique');
+    const semestreSelect = document.getElementById('semestre');
+    
+    // Mettre à jour les statistiques quand les sélections changent
+    function updateStats() {
+        const annee = anneeSelect.value;
+        const semestre = semestreSelect.value;
+        
+        if (!annee || !semestre) return;
+        
+        // Appel AJAX pour récupérer les statistiques
+        fetch(`/grades/api/stats-releves/?annee=${annee}&semestre=${semestre}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('count-students').textContent = data.etudiants_actifs || '0';
+                document.getElementById('count-notes').textContent = data.notes_publiees || '0';
+                document.getElementById('count-existing').textContent = data.releves_existants || '0';
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                document.getElementById('count-students').textContent = 'Erreur';
+                document.getElementById('count-notes').textContent = 'Erreur';
+                document.getElementById('count-existing').textContent = 'Erreur';
+            });
+    }
+    
+    // Événements de changement
+    anneeSelect.addEventListener('change', updateStats);
+    semestreSelect.addEventListener('change', updateStats);
+    
+    // Simulation
+    document.getElementById('btn-test').addEventListener('click', function(e) {
+        e.preventDefault();
+        const annee = anneeSelect.value;
+        const semestre = semestreSelect.value;
+        
+        if (!annee || !semestre) {
+            alert('Veuillez sélectionner une année et un semestre');
+            return;
+        }
+        
+        fetch(`/grades/api/simulation-releves/?annee=${annee}&semestre=${semestre}`)
+            .then(response => response.json())
+            .then(data => {
+                let message = `📊 Simulation pour ${annee} ${semestre} :\n\n`;
+                message += `• Étudiants concernés : ${data.etudiants_concernes}\n`;
+                message += `• Notes à inclure : ${data.notes_a_inclure}\n`;
+                message += `• Relevés à créer : ${data.nouveaux_releves}\n`;
+                message += `• Relevés à mettre à jour : ${data.releves_a_mettre_a_jour}\n\n`;
+                message += 'Souhaitez-vous continuer avec la génération ?';
+                
+                if (confirm(message)) {
+                    // Auto-remplir le formulaire et soumettre
+                    document.querySelector('form').submit();
+                }
+            });
+    });
+    
+    // Confirmation avant génération
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const annee = anneeSelect.value;
+        const semestre = semestreSelect.value;
+        
+        if (!confirm(`Êtes-vous sûr de vouloir générer les relevés pour ${annee} ${semestre} ?\n\nCette opération peut prendre plusieurs minutes.`)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

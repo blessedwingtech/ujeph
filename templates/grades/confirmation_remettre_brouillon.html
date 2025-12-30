@@ -1,0 +1,113 @@
+<!-- templates/grades/confirmation_remettre_brouillon.html -->
+{% extends 'base.html' %}
+{% block title %}Confirmation - Remise en brouillon{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Confirmation - Remise en brouillon
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    <!-- Avertissement -->
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-exclamation-triangle-fill"></i> Attention !</h6>
+                        <p class="mb-0">
+                            Vous êtes sur le point de remettre <strong>{{ notes_count }} note(s)</strong> en brouillon.
+                            Ces notes ne seront plus visibles par les étudiants.
+                        </p>
+                    </div>
+
+                    <!-- Informations du cours -->
+                    <div class="mb-4">
+                        <h5>{{ cours.intitule }}</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <i class="bi bi-person"></i>
+                                    <strong>Professeur:</strong> {{ cours.professeur.get_full_name }}
+                                </p>
+                                <p class="mb-1">
+                                    <i class="bi bi-building"></i>
+                                    <strong>Faculté:</strong> {{ cours.faculte.nom }}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1">
+                                    <i class="bi bi-mortarboard"></i>
+                                    <strong>Niveau:</strong> {{ cours.get_niveau_display }}
+                                </p>
+                                <p class="mb-1">
+                                    <i class="bi bi-journal-check"></i>
+                                    <strong>Notes publiées:</strong> {{ notes_count }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="motif" class="form-label fw-bold">
+                                <i class="bi bi-chat-left-text"></i> Motif (optionnel)
+                            </label>
+                            <textarea name="motif" id="motif" class="form-control" rows="3"
+                                      placeholder="Pourquoi remettre ces notes en brouillon ? (ex: erreur de saisie, réévaluation nécessaire...)"></textarea>
+                            <div class="form-text">
+                                Ce motif sera enregistré dans l'historique d'audit.
+                            </div>
+                        </div>
+
+                        <!-- Liste des étudiants concernés -->
+                        <div class="mb-4">
+                            <h6><i class="bi bi-people"></i> Étudiants concernés :</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Étudiant</th>
+                                            <th>Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for note in notes|slice:":5" %}
+                                        <tr>
+                                            <td>{{ note.etudiant.user.get_full_name }}</td>
+                                            <td>{{ note.valeur }}/100</td>
+                                        </tr>
+                                        {% endfor %}
+                                        {% if notes_count > 5 %}
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">
+                                                ... et {{ notes_count|add:"-5" }} autres étudiant(s)
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'grades:gestion_notes_publiees' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Confirmer la remise en brouillon
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Supprimer Professeur - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h4 class="mb-0">🗑️ Supprimer le professeur</h4>
+        </div>
+        <div class="card-body">
+            <h5>Êtes-vous sûr de vouloir supprimer ce professeur ?</h5>
+            
+            <div class="alert alert-warning mt-3">
+                <strong>{{ professeur.user.get_full_name }}</strong><br>
+                <strong>Spécialité:</strong> {{ professeur.specialite }}<br>
+                <strong>Statut:</strong> {{ professeur.statut }}<br>
+                <strong>Date d'embauche:</strong> {{ professeur.date_embauche|date:"d/m/Y" }}
+            </div>
+
+            <p class="text-danger">
+                <strong>⚠️ Attention :</strong> Cette action est irréversible. 
+                Les cours assignés à ce professeur deviendront sans professeur.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'accounts:liste_professeurs' %}" class="btn btn-secondary">
+                        ← Annuler
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        🗑️ Confirmer la suppression
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

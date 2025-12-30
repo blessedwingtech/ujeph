@@ -1,0 +1,383 @@
+<!-- accounts/templates/accounts/detail_utilisateur.html -->
+{% extends 'base.html' %}
+{% block title %}Détail Utilisateur - {{ utilisateur.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'accounts:gestion_utilisateurs' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+        <h3 class="mb-0">
+            <i class="bi bi-person-badge"></i> {{ utilisateur.get_full_name|default:utilisateur.username }}
+        </h3>
+    </div>
+
+    <div class="row">
+        <!-- Informations principales -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <strong>Informations du compte</strong>
+                    {% if user.role == 'admin' %}
+                    <a href="{% url 'accounts:voir_profil_utilisateur' utilisateur.id %}"
+                    class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-person-lines-fill"></i> Voir le profil
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nom d'utilisateur :</strong><br>
+                                {{ utilisateur.username }}
+                            </p>
+                            <p><strong>Nom complet :</strong><br>
+                                {{ utilisateur.get_full_name|default:"—" }}
+                            </p>
+                            <p><strong>Email :</strong><br>
+                                {{ utilisateur.email|default:"—" }}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Rôle :</strong><br>
+                                <span class="badge 
+                                    {% if utilisateur.role == 'admin' %}bg-dark
+                                    {% elif utilisateur.role == 'prof' %}bg-info
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ utilisateur.get_role_display }}
+                                </span>
+                            </p>
+                            <p><strong>Statut :</strong><br>
+                                {% if utilisateur.is_active %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Compte actif
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle"></i> Compte désactivé
+                                </span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Inscrit depuis :</strong><br>
+                                {{ utilisateur.date_joined|date:"d F Y" }}
+                            </p>
+                            <p><strong>Dernière connexion :</strong><br>
+                                {% if utilisateur.last_login %}
+                                    {{ utilisateur.last_login|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    <span class="text-muted">Jamais</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning">
+                    <strong><i class="bi bi-gear"></i> Actions administratives</strong>
+                </div>
+                <div class="card-body">
+                    <!-- Activation/Désactivation -->
+                    <div class="mb-3">
+                        <form method="post" action="{% url 'accounts:toggle_activation' utilisateur.id %}" 
+                        id="toggleForm-{{ utilisateur.id }}" 
+                        class="toggle-activation-form">
+                        {% csrf_token %}
+                        
+                        {% if utilisateur.is_active %}
+                        <button type="submit" 
+                                class="btn btn-danger w-100 toggle-btn"
+                                data-user-id="{{ utilisateur.id }}"
+                                data-action="desactiver"
+                                data-username="{{ utilisateur.username }}"
+                                data-fullname="{{ utilisateur.get_full_name }}"
+                                onclick="return confirmToggle(event, this)">
+                            <i class="bi bi-person-x"></i> Désactiver ce compte
+                        </button>
+                        <small class="text-muted d-block mt-1">
+                            L'utilisateur ne pourra plus se connecter
+                        </small>
+                        {% else %}
+                        <button type="submit" 
+                                class="btn btn-success w-100 toggle-btn"
+                                data-user-id="{{ utilisateur.id }}"
+                                data-action="reactiver"
+                                data-username="{{ utilisateur.username }}"
+                                data-fullname="{{ utilisateur.get_full_name }}"
+                                onclick="return confirmToggle(event, this)">
+                            <i class="bi bi-person-check"></i> Réactiver ce compte
+                        </button>
+                        <small class="text-muted d-block mt-1">
+                            L'utilisateur pourra à nouveau se connecter
+                        </small>
+                        {% endif %}
+                    </form>
+                    </div>
+
+                    <!-- Changer rôle -->
+                    {% if utilisateur != user %}  <!-- Ne pas modifier son propre rôle -->
+                    <form method="post" action="{% url 'accounts:changer_role' utilisateur.id %}" id="roleForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Changer le rôle :</strong></label>
+                            <div class="input-group">
+                                <select name="role" class="form-select" required id="roleSelect">
+                                    {% for role_value, role_label in utilisateur.Role.choices %}
+                                    <option value="{{ role_value }}" 
+                                            {% if utilisateur.role == role_value %}selected{% endif %}>
+                                        {{ role_label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" 
+                                        class="btn btn-warning"
+                                        onclick="return confirmRoleChange(event)">
+                                    <i class="bi bi-arrow-repeat"></i> Appliquer
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations supplémentaires -->
+        <div class="col-md-4">
+            <!-- Profil étudiant -->
+            {% if utilisateur.role == 'etud' and utilisateur.etudiant %}
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-info text-white">
+                    <strong><i class="bi bi-mortarboard"></i> Profil Étudiant</strong>
+                </div>
+                <div class="card-body">
+                    <p><strong>Matricule :</strong><br>
+                        {{ utilisateur.etudiant.matricule }}
+                    </p>
+                    <p><strong>Faculté :</strong><br>
+                        {{ utilisateur.etudiant.faculte.nom }}
+                    </p>
+                    <p><strong>Niveau :</strong><br>
+                        {{ utilisateur.etudiant.get_niveau_display }}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Profil professeur -->
+            {% if utilisateur.role == 'prof' and utilisateur.professeur %}
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-success text-white">
+                    <strong><i class="bi bi-person-badge"></i> Profil Professeur</strong>
+                </div>
+                <div class="card-body">
+                    <p><strong>Spécialité :</strong><br>
+                        {{ utilisateur.professeur.specialite|default:"—" }}
+                    </p>
+                    <p><strong>Grade :</strong><br>
+                        {{ utilisateur.professeur.get_grade_display|default:"—" }}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Avertissements -->
+            <div class="alert alert-warning small">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Important :</strong>
+                <ul class="mb-0 mt-1">
+                    <li>Ne désactivez pas votre propre compte</li>
+                    <li>Les changements sont immédiats</li>
+                    <li>Un compte inactif ne peut pas se connecter</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SweetAlert CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+<script>
+// Fonction pour l'activation/désactivation
+function confirmToggle(event, button) {
+    event.preventDefault();
+    
+    const action = button.getAttribute('data-action');
+    const username = button.getAttribute('data-username');
+    const fullname = button.getAttribute('data-fullname');
+    const form = button.closest('form');
+    
+    const config = {
+        desactiver: {
+            title: 'Désactiver le compte',
+            html: `
+                <div class="text-start">
+                    <p>Êtes-vous sûr de vouloir <strong class="text-danger">désactiver</strong> le compte de :</p>
+                    <div class="alert alert-light border">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-person-circle fs-4 text-muted me-3"></i>
+                            <div>
+                                <h6 class="mb-1">${fullname}</h6>
+                                <small class="text-muted">@${username}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-warning small">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        <strong>Conséquences :</strong>
+                        <ul class="mb-0 mt-1">
+                            <li>L'utilisateur ne pourra plus se connecter</li>
+                            <li>Son accès sera immédiatement coupé</li>
+                            <li>Les données seront conservées</li>
+                        </ul>
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            confirmButtonText: '<i class="bi bi-person-x me-1"></i> Désactiver',
+            confirmButtonColor: '#dc3545',
+            cancelButtonText: '<i class="bi bi-x me-1"></i> Annuler',
+            showCancelButton: true,
+            showCloseButton: true,
+            customClass: {
+                confirmButton: 'btn btn-danger',
+                cancelButton: 'btn btn-secondary'
+            }
+        },
+        reactiver: {
+            title: 'Réactiver le compte',
+            html: `
+                <div class="text-start">
+                    <p>Êtes-vous sûr de vouloir <strong class="text-success">réactiver</strong> le compte de :</p>
+                    <div class="alert alert-light border">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-person-circle fs-4 text-success me-3"></i>
+                            <div>
+                                <h6 class="mb-1">${fullname}</h6>
+                                <small class="text-muted">@${username}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-success small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Conséquences :</strong>
+                        <ul class="mb-0 mt-1">
+                            <li>L'utilisateur pourra à nouveau se connecter</li>
+                            <li>Ses permissions seront restaurées</li>
+                        </ul>
+                    </div>
+                </div>
+            `,
+            icon: 'success',
+            confirmButtonText: '<i class="bi bi-person-check me-1"></i> Réactiver',
+            confirmButtonColor: '#198754',
+            cancelButtonText: '<i class="bi bi-x me-1"></i> Annuler',
+            showCancelButton: true,
+            showCloseButton: true,
+            customClass: {
+                confirmButton: 'btn btn-success',
+                cancelButton: 'btn btn-secondary'
+            }
+        }
+    };
+    
+    Swal.fire(config[action]).then((result) => {
+        if (result.isConfirmed) {
+            // Soumettre le formulaire
+            form.submit();
+            
+            // Afficher message de chargement
+            Swal.fire({
+                title: 'Traitement en cours...',
+                text: 'Veuillez patienter',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+    });
+    
+    return false; // Empêcher la soumission normale
+}
+
+// Fonction pour le changement de rôle
+function confirmRoleChange(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('roleForm');
+    const roleSelect = document.getElementById('roleSelect');
+    const nouveauRole = roleSelect.options[roleSelect.selectedIndex].text;
+    const username = '{{ utilisateur.username }}';
+    const fullname = '{{ utilisateur.get_full_name|default:utilisateur.username }}';
+    const ancienRole = '{{ utilisateur.get_role_display }}';
+    
+    Swal.fire({
+        title: 'Changer le rôle',
+        html: `
+            <div class="text-start">
+                <p>Vous êtes sur le point de modifier le rôle de :</p>
+                <div class="alert alert-light border">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-circle fs-4 text-primary me-3"></i>
+                        <div>
+                            <h6 class="mb-1">${fullname}</h6>
+                            <small class="text-muted">@${username}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <p class="mb-1"><strong>Changement :</strong></p>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="badge bg-secondary">${ancienRole}</span>
+                        <i class="bi bi-arrow-right text-primary mx-2"></i>
+                        <span class="badge bg-primary">${nouveauRole}</span>
+                    </div>
+                </div>
+                <div class="alert alert-warning small">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    <strong>Note :</strong> Cette action peut affecter les permissions de l'utilisateur.
+                </div>
+                <p><strong>Confirmez-vous ce changement ?</strong></p>
+            </div>
+        `,
+        icon: 'question',
+        confirmButtonText: '<i class="bi bi-check-circle me-1"></i> Confirmer',
+        confirmButtonColor: '#0d6efd',
+        cancelButtonText: '<i class="bi bi-x me-1"></i> Annuler',
+        showCancelButton: true,
+        showCloseButton: true,
+        customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Soumettre le formulaire
+            form.submit();
+            
+            // Afficher message de chargement
+            Swal.fire({
+                title: 'Changement en cours...',
+                text: 'Mise à jour du rôle',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+    });
+    
+    return false; // Empêcher la soumission normale
+}
+
+ 
+</script>
+{% endblock %}

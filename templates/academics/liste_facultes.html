@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Facultés{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+```
+<!-- En-tête -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold">🏛️ Gestion des Facultés</h3>
+        <p class="text-muted mb-0">Créer, modifier et organiser les facultés de l'institution</p>
+    </div>
+    <a href="{% url 'academics:creer_faculte' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nouvelle faculté
+    </a>
+</div>
+
+<!-- Messages -->
+<!-- {% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %} -->
+
+<!-- Tableau -->
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Code</th>
+                        <th>Nom</th>
+                        <th>Description</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for faculte in facultes %}
+                    <tr>
+                        <td class="ps-3 fw-semibold">{{ faculte.code }}</td>
+                        <td>
+                            <i class="fas {{ faculte.icone }} text-primary me-1"></i>
+                            {{ faculte.nom }}
+                        </td>
+                        <td class="text-muted">
+                            {{ faculte.description|default:"—"|truncatechars:60 }}
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'academics:modifier_faculte' faculte.id %}" class="btn btn-sm btn-outline-warning me-1">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'academics:supprimer_faculte' faculte.id %}" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            Aucune faculté enregistrée
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+```
+
+</div>
+{% endblock %}

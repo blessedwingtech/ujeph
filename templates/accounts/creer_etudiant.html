@@ -1,0 +1,553 @@
+{% extends 'base.html' %}
+{% block title %}Créer un Étudiant - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-person-plus"></i> Ajouter un Étudiant
+            </h2>
+            <p class="text-muted mb-0">Remplissez le formulaire pour ajouter un nouvel étudiant à l'UJEPH</p>
+        </div>
+        <a href="{% url 'accounts:liste_etudiants' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <!-- SUPPRIMER la deuxième balise <form> ici -->
+            <form method="post" id="studentForm" novalidate class="{% if form_invalid %}was-validated{% endif %}">
+                {% csrf_token %}
+                
+                <!-- Informations sur la création -->
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Information importante :</strong> Le mot de passe par défaut sera "1234" et le matricule sera généré automatiquement. L'étudiant devra changer son mot de passe à sa première connexion.
+                </div>
+                
+                <!-- SECTION 1: Informations de connexion -->
+                <div class="mb-5">
+                    <h5 class="border-bottom pb-2 mb-4">
+                        <i class="bi bi-person-badge text-primary"></i>
+                        Informations de connexion
+                    </h5>
+                    
+                    <div class="row g-3">
+                        <!-- Username -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nom d'utilisateur *</label>
+                            {{ user_form.username }}
+                            <div class="form-text">
+                                <span id="usernameIcon">ⓘ</span>
+                                <span id="usernameMessage">Doit commencer par une lettre ou _</span>
+                            </div>
+                            {% if user_form.username.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in user_form.username.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email *</label>
+                            {{ user_form.email }}
+                            <div class="form-text">
+                                <span id="emailIcon">ⓘ</span>
+                                <span id="emailMessage">Format: exemple@domaine.com</span>
+                            </div>
+                            {% if user_form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in user_form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Nouvelle ligne pour le téléphone de l'étudiant -->
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Téléphone de l'étudiant (optionnel)</label>
+                            {{ user_form.telephone }}
+                            <div class="form-text">
+                                <span id="phoneIcon">ⓘ</span>
+                                <span id="phoneMessage">Format: +509XXXXXXXX</span>
+                            </div>
+                            {% if user_form.telephone.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in user_form.telephone.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- SECTION 2: Informations personnelles -->
+                <div class="mb-5">
+                    <h5 class="border-bottom pb-2 mb-4">
+                        <i class="bi bi-person-vcard text-primary"></i>
+                        Informations personnelles
+                    </h5>
+                    
+                    <div class="row g-3">
+                        <!-- Prénom -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Prénom *</label>
+                            {{ user_form.first_name }}
+                            <div class="form-text">
+                                <span id="first_nameIcon">ⓘ</span>
+                                <span id="first_nameMessage">Lettres seulement, majuscule en début</span>
+                            </div>
+                            {% if user_form.first_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in user_form.first_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Nom -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Nom *</label>
+                            {{ user_form.last_name }}
+                            <div class="form-text">
+                               <span id="last_nameIcon">ⓘ</span>
+                                <span id="last_nameMessage">Lettres seulement, majuscule en début</span>
+                            </div>
+                            {% if user_form.last_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in user_form.last_name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mt-3">
+                        <!-- Sexe -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Sexe *</label>
+                            {{ etu_form.sexe }}
+                            {% if etu_form.sexe.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in etu_form.sexe.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Date de naissance -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Date de naissance *</label>
+                            {{ etu_form.date_naissance }}
+                            <div class="form-text">
+                                <span id="birthDateIcon">ⓘ</span>
+                                <span id="birthDateMessage">Format: JJ/MM/AAAA</span>
+                            </div>
+                            {% if etu_form.date_naissance.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in etu_form.date_naissance.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Téléphone parent -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Téléphone parent/tuteur *</label>
+                            {{ etu_form.telephone_parent }}
+                            <div class="form-text">
+                                <span id="parentPhoneIcon">ⓘ</span>
+                                <span id="parentPhoneMessage">Format: +509XXXXXXXX</span>
+                            </div>
+                            {% if etu_form.telephone_parent.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in etu_form.telephone_parent.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mt-3">
+                        <!-- Adresse -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Adresse *</label>
+                            {{ etu_form.adresse }}
+                            {% if etu_form.adresse.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in etu_form.adresse.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Informations académiques -->
+                <div class="mb-4">
+                    <h5 class="border-bottom pb-2 mb-4">
+                        <i class="bi bi-mortarboard text-primary"></i>
+                        Informations académiques
+                    </h5>
+                    
+                    <div class="row g-3">
+                        <!-- Faculté -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Faculté *</label>
+                            {{ etu_form.faculte }}
+                            {% if etu_form.faculte.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in etu_form.faculte.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Niveau -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Niveau *</label>
+                            {{ etu_form.niveau }}
+                            {% if etu_form.niveau.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in etu_form.niveau.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Semestre *</label>
+                            {{ etu_form.semestre_courant }}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                {{ etu_form.semestre_courant.help_text }}
+                            </div>
+                            {% if etu_form.semestre_courant.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in etu_form.semestre_courant.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="d-flex justify-content-between align-items-center pt-4 border-top">
+                    <a href="{% url 'accounts:liste_etudiants' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </a>
+                    <div>
+                        <button type="reset" class="btn btn-outline-warning me-2">
+                            <i class="bi bi-arrow-clockwise"></i> Réinitialiser
+                        </button>
+                        <button type="submit" class="btn btn-success" id="submitBtn">
+                            <i class="bi bi-check-circle"></i> Créer l'étudiant
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const csrftoken = '{{ csrf_token }}';
+
+// Validation du téléphone de l'étudiant (ajoutez cette fonction)
+function validateStudentPhone(phone) {
+    const icon = document.getElementById('phoneIcon');
+    const message = document.getElementById('phoneMessage');
+    const phoneInput = document.querySelector('#id_telephone');
+    
+    if (!icon || !message || !phoneInput) return;
+    
+    phone = phone.trim();
+    
+    if (phone.length === 0) {
+        icon.textContent = 'ⓘ';
+        message.textContent = 'Format: +509XXXXXXXX';
+        icon.className = 'text-info';
+        phoneInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    // Validation format téléphone Haïtien
+    const phoneRegex = /^\+?[1-9]\d{7,14}$/;
+    
+    if (!phoneRegex.test(phone)) {
+        icon.textContent = '✗';
+        message.textContent = 'Format: +509XXXXXXXX ';
+        icon.className = 'text-danger';
+        phoneInput.classList.add('is-invalid');
+        phoneInput.classList.remove('is-valid');
+        return;
+    }
+    
+    icon.textContent = '✓';
+    message.textContent = 'Format téléphone valide';
+    icon.className = 'text-success';
+    phoneInput.classList.add('is-valid');
+    phoneInput.classList.remove('is-invalid');
+}
+
+// Validation du username en temps réel
+function validateUsername(username) {
+    const icon = document.getElementById('usernameIcon');
+    const message = document.getElementById('usernameMessage');
+    const usernameInput = document.querySelector('#id_username');
+    
+    username = username.trim();
+    
+    if (username.length === 0) {
+        icon.textContent = 'ⓘ';
+        message.textContent = 'Doit commencer par une lettre ou _';
+        icon.className = 'text-info';
+        usernameInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    const isValidFormat = /^[a-zA-Z_].*$/.test(username);
+    if (!isValidFormat) {
+        icon.textContent = '✗';
+        message.textContent = 'Doit commencer par une lettre (a-z) ou underscore (_)';
+        icon.className = 'text-danger';
+        usernameInput.classList.add('is-invalid');
+        usernameInput.classList.remove('is-valid');
+        return;
+    }
+    
+    if (username.length < 3) {
+        icon.textContent = '⚠';
+        message.textContent = 'Minimum 3 caractères';
+        icon.className = 'text-warning';
+        usernameInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    checkUsernameAvailability(username);
+}
+
+function checkUsernameAvailability(username) {
+    const icon = document.getElementById('usernameIcon');
+    const message = document.getElementById('usernameMessage');
+    const usernameInput = document.querySelector('#id_username');
+    
+    icon.textContent = '⏳';
+    message.textContent = 'Vérification...';
+    icon.className = 'text-info';
+    
+    fetch('{% url "accounts:check_username" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify({ username: username })
+    }).then(response => response.json())
+    .then(data => {
+        if (!data.valid) {
+            icon.textContent = '✗';
+            message.textContent = data.message;
+            icon.className = 'text-danger';
+            usernameInput.classList.add('is-invalid');
+            usernameInput.classList.remove('is-valid');
+        } else if (data.exists) {
+            icon.textContent = '✗';
+            message.textContent = "Ce nom d'utilisateur est déjà pris";
+            icon.className = 'text-danger';
+            usernameInput.classList.add('is-invalid');
+            usernameInput.classList.remove('is-valid');
+        } else {
+            icon.textContent = '✓';
+            message.textContent = 'Nom d\'utilisateur disponible';
+            icon.className = 'text-success';
+            usernameInput.classList.add('is-valid');
+            usernameInput.classList.remove('is-invalid');
+        }
+    }).catch(error => {
+        icon.textContent = '⚠';
+        message.textContent = 'Impossible de vérifier le nom (réseau ou serveur)';
+        icon.className = 'text-warning';
+        usernameInput.classList.remove('is-invalid');
+        usernameInput.classList.remove('is-valid');
+    });
+}
+
+// Validation de l'email
+function validateEmail(email) {
+    const icon = document.getElementById('emailIcon');
+    const message = document.getElementById('emailMessage');
+    const emailInput = document.querySelector('#id_email');
+    
+    email = email.trim();
+    
+    if (email.length === 0) {
+        icon.textContent = 'ⓘ';
+        message.textContent = 'Format: exemple@domaine.com';
+        icon.className = 'text-info';
+        emailInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+        icon.textContent = '✗';
+        message.textContent = 'Format email invalide';
+        icon.className = 'text-danger';
+        emailInput.classList.add('is-invalid');
+        emailInput.classList.remove('is-valid');
+        return;
+    }
+    
+    icon.textContent = '✓';
+    message.textContent = 'Format email valide';
+    icon.className = 'text-success';
+    emailInput.classList.add('is-valid');
+    emailInput.classList.remove('is-invalid');
+}
+
+// Validation des noms et prénoms
+function validateName(name, field) {
+    const icon = document.getElementById(field + 'Icon');
+    const message = document.getElementById(field + 'Message');
+    const input = document.querySelector('#id_' + field);
+    
+    name = name.trim();
+    
+    if (name.length === 0) {
+        icon.textContent = 'ⓘ';
+        message.textContent = 'Lettres seulement, majuscule en début';
+        icon.className = 'text-info';
+        input.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    const nameRegex = /^[A-ZÀ-ÿ][a-zà-ÿ]*([\s\-'][A-ZÀ-ÿ][a-zà-ÿ]*)*$/;
+    
+    if (!nameRegex.test(name)) {
+        icon.textContent = '✗';
+        message.textContent = 'Lettres seulement, commence par une majuscule';
+        icon.className = 'text-danger';
+        input.classList.add('is-invalid');
+        input.classList.remove('is-valid');
+        return;
+    }
+    
+    icon.textContent = '✓';
+    message.textContent = 'Format valide';
+    icon.className = 'text-success';
+    input.classList.add('is-valid');
+    input.classList.remove('is-invalid');
+}
+
+// Validation du téléphone parent
+function validatePhone(phone) {
+    const icon = document.getElementById('parentPhoneIcon');
+    const message = document.getElementById('parentPhoneMessage');
+    const phoneInput = document.querySelector('#id_telephone_parent');
+    
+    phone = phone.trim();
+    
+    if (phone.length === 0) {
+        icon.textContent = 'ⓘ';
+        message.textContent = 'Format: +509XXXXXXXX';
+        icon.className = 'text-info';
+        phoneInput.classList.remove('is-valid', 'is-invalid');
+        return;
+    }
+    
+    const phoneRegex = /^\+?[1-9]\d{7,14}$/;
+    
+    if (!phoneRegex.test(phone)) {
+        icon.textContent = '✗';
+        message.textContent = 'Format: +509XXXXXXXX';
+        icon.className = 'text-danger';
+        phoneInput.classList.add('is-invalid');
+        phoneInput.classList.remove('is-valid');
+        return;
+    }
+    
+    icon.textContent = '✓';
+    message.textContent = 'Format téléphone valide';
+    icon.className = 'text-success';
+    phoneInput.classList.add('is-valid');
+    phoneInput.classList.remove('is-invalid');
+}
+
+// Écouter les changements dans les champs
+document.addEventListener('DOMContentLoaded', function() {
+    // Username validation
+    const usernameInput = document.querySelector('#id_username');
+    if (usernameInput) {
+        usernameInput.addEventListener('input', function() {
+            validateUsername(this.value);
+        });
+        if (usernameInput.value) validateUsername(usernameInput.value);
+    }
+    
+    // Email validation
+    const emailInput = document.querySelector('#id_email');
+    if (emailInput) {
+        emailInput.addEventListener('input', function() {
+            validateEmail(this.value);
+        });
+        if (emailInput.value) validateEmail(emailInput.value);
+    }
+    
+    // First name validation
+    const firstNameInput = document.querySelector('#id_first_name');
+    if (firstNameInput) {
+        firstNameInput.addEventListener('input', function() {
+            validateName(this.value, 'first_name'); 
+        });
+        if (firstNameInput.value) validateName(firstNameInput.value, 'first_name');
+    }
+    
+    // Last name validation
+    const lastNameInput = document.querySelector('#id_last_name');
+    if (lastNameInput) {
+        lastNameInput.addEventListener('input', function() {
+            validateName(this.value, 'last_name');
+        });
+        if (lastNameInput.value) validateName(lastNameInput.value, 'last_name');
+    }
+    
+    // Phone parent validation
+    const phoneInput = document.querySelector('#id_telephone_parent');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            validatePhone(this.value);
+        });
+        if (phoneInput.value) validatePhone(phoneInput.value);
+    }
+    
+    // Phone student validation (AJOUTEZ CECI)
+    const studentPhoneInput = document.querySelector('#id_telephone');
+    if (studentPhoneInput) {
+        studentPhoneInput.addEventListener('input', function() {
+            validateStudentPhone(this.value);
+        });
+        if (studentPhoneInput.value) validateStudentPhone(studentPhoneInput.value);
+    }
+    
+    // Focus sur le premier champ
+    if (usernameInput) usernameInput.focus(); 
+});
+</script>
+{% endblock %}

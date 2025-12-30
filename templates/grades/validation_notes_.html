@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block title %}Validation des Notes - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>📋 Validation des Notes Soumises</h3>
+    <p class="text-muted">Notes en attente de validation (statut : "Soumise")</p>
+
+    <!-- {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %} -->
+
+    {% if notes_soumises %}
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-warning text-white">
+                <strong>{{ notes_soumises|length }} note{{ notes_soumises|length|pluralize }} à valider</strong>
+            </div>
+
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Étudiant</th>
+                                <th>Cours</th>
+                                <th>Note</th>
+                                <th>Professeur</th>
+                                <th>Date Soumission</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for note in notes_soumises %}
+                            <tr>
+                                <td>{{ note.etudiant.user.get_full_name }}</td>
+                                <td>{{ note.cours.intitule }}</td>
+                                <td><strong>{{ note.valeur }}/100</strong></td>
+                                <td>{{ note.created_by.get_full_name }}</td>
+                                <td>{{ note.date_soumission|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-success btn-sm" 
+                                            data-bs-toggle="modal" data-bs-target="#validerModal{{ note.id }}">
+                                        ✅ Publier
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm" 
+                                            data-bs-toggle="modal" data-bs-target="#rejeterModal{{ note.id }}">
+                                        ❌ Rejeter
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Modal de validation -->
+                            <div class="modal fade" id="validerModal{{ note.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">✅ Publier la note</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Confirmez-vous la publication de la note de <strong>{{ note.etudiant.user.get_full_name }}</strong> ?</p>
+                                            <p><strong>Cours:</strong> {{ note.cours.intitule }}</p>
+                                            <p><strong>Note:</strong> {{ note.valeur }}/100</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="note_id" value="{{ note.id }}">
+                                                <input type="hidden" name="action" value="publier">
+                                                <button type="submit" class="btn btn-success">Confirmer la publication</button>
+                                            </form>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal de rejet -->
+                            <div class="modal fade" id="rejeterModal{{ note.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">❌ Rejeter la note</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <p>Vous êtes sur le point de rejeter la note de <strong>{{ note.etudiant.user.get_full_name }}</strong>.</p>
+                                                <p><strong>Cours:</strong> {{ note.cours.intitule }}</p>
+                                                <p><strong>Note:</strong> {{ note.valeur }}/100</p>
+                                                
+                                                <div class="mb-3">
+                                                    <label for="motif{{ note.id }}" class="form-label">
+                                                        <strong>Motif du rejet *</strong>
+                                                    </label>
+                                                    <textarea class="form-control" id="motif{{ note.id }}" 
+                                                              name="motif_rejet" rows="3" 
+                                                              placeholder="Expliquez pourquoi cette note est rejetée..."
+                                                              required></textarea>
+                                                    <div class="form-text">
+                                                        Ce motif sera visible par le professeur.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <input type="hidden" name="note_id" value="{{ note.id }}">
+                                                <input type="hidden" name="action" value="rejeter">
+                                                <button type="submit" class="btn btn-danger">Confirmer le rejet</button>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-success mt-4">
+            <h5>✅ Toutes les notes ont été traitées</h5>
+            <p>Aucune note en attente de validation.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

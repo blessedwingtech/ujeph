@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% block title %}Liste des Étudiants - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3>🎓 Gestion des Étudiants</h3>
+            <p class="text-muted mb-0">Liste complète des étudiants inscrits à l'UJEPH</p>
+        </div>
+        <a href="{% url 'accounts:creer_etudiant' %}" class="btn btn-success">
+            <i class="bi bi-person-plus"></i> Ajouter un Étudiant
+        </a>
+    </div>
+
+    <!-- ✅ Messages globaux -->
+   <!--  {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %} -->
+
+    <!-- 🔍 Barre de recherche -->
+     
+        <input type="text" id="searchInput" class="form-control mb-3"
+       placeholder="🔍 Rechercher un étudiant (nom, matricule, faculté)...">
+   
+
+    <!-- 📋 Tableau principal -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            {% if etudiants %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Matricule</th>
+                            <th>Nom Complet</th>
+                            <th>Faculté</th>
+                            <th>Niveau</th>
+                            <th>Semestre</th>
+                            <th>Téléphone</th>
+                            <th>Date d'Inscription</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        {% for e in etudiants %}
+                        <tr>
+                            <td><strong>{{ e.matricule }}</strong></td>
+                            <td>{{ e.user.get_full_name }}</td>
+                            <td>{{ e.faculte.nom }}</td>
+                            <td>{{ e.get_niveau_display }}</td>
+                            <td>{{ e.semestre_courant }}</td>
+                            <td>{{ e.user.telephone|default:"—" }}</td>
+                            <td>{{ e.date_inscription|date:"d/m/Y" }}</td>
+                            <td>
+                                <!-- ✅ CORRECTION : Utiliser e.id au lieu de etudiant.id -->
+                                {% if e.id %}
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'accounts:modifier_etudiant' e.id %}" 
+                                       class="btn btn-outline-primary me-1" title="Modifier">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <!-- REMPLACEZ CECI -->
+                                    <a href="{% url 'accounts:supprimer_etudiant' e.id %}"
+                                    class="btn btn-outline-danger me-1 btn-delete-student" 
+                                    title="Supprimer"
+                                    data-student-id="{{ e.id }}"
+                                    data-student-name="{{ e.user.get_full_name }}"
+                                    data-student-matricule="{{ e.matricule }}">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                    <a href="{% url 'accounts:voir_profil_utilisateur' e.user.id %}"
+                                    class="btn btn-outline-info btn-sm">
+                                        <i class="bi bi-person-lines-fill"></i> Voir le profil
+                                    </a>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">ID manquant</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if etudiants.has_other_pages %}
+            <nav aria-label="Pagination étudiants" class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center">
+                    {% if etudiants.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ etudiants.previous_page_number }}">←</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">←</span></li>
+                    {% endif %}
+                    
+                    {% for num in etudiants.paginator.page_range %}
+                        {% if num == etudiants.number %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if etudiants.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ etudiants.next_page_number }}">→</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">→</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="alert alert-warning text-center">
+                <h5>⚠️ Aucun étudiant trouvé</h5>
+                <p>Ajoutez un nouvel étudiant pour commencer.</p>
+            </div>
+            {% endif %}
+        </div>
+        <a id="exportBtn" href="{% url 'accounts:export_etudiants_csv' %}?q={{ request.GET.q|default:'' }}"
+        class="btn btn-outline-success btn-sm">
+            <i class="fas fa-file-export me-1"></i> Exporter CSV
+        </a>
+
+        <script>
+        const searchInput = document.getElementById('searchInput');
+        const exportBtn = document.getElementById('exportBtn');
+
+        searchInput.addEventListener('input', function() {
+            const q = encodeURIComponent(this.value.trim());
+            exportBtn.href = `{% url 'accounts:export_etudiants_csv' %}?q=${q}`;
+        });
+        </script>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const input = document.getElementById('searchInput');
+    const tableBody = document.getElementById('tableBody');
+
+    if (!input || !tableBody) {
+        console.error("❌ searchInput ou tableBody introuvable");
+        return;
+    }
+
+    console.log("✅ Recherche temps réel activée");
+
+    let timeout = null;
+
+    input.addEventListener('keyup', function () {
+        clearTimeout(timeout);
+
+        timeout = setTimeout(() => {
+            const query = input.value.trim();
+
+            fetch("{% url 'accounts:recherche_etudiants_ajax' %}?q=" + query)
+                .then(response => response.json())
+                .then(data => {
+
+                    tableBody.innerHTML = '';
+
+                    if (data.etudiants.length === 0) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">
+                                    Aucun étudiant trouvé
+                                </td>
+                            </tr>`;
+                        return;
+                    }
+
+                    data.etudiants.forEach(e => {
+                        tableBody.innerHTML += `
+                            <tr>
+                                <td><strong>${e.matricule}</strong></td>
+                                <td>${e.nom}</td>
+                                <td>${e.faculte}</td>
+                                <td>${e.niveau}</td>
+                                <td>${e.telephone}</td>
+                                <td>${e.date}</td>
+                                <td>
+                                    <a href="/accounts/etudiants/modifier/${e.id}/"
+                                       class="btn btn-sm btn-outline-primary">✏️</a>
+                                    <a href="/accounts/etudiants/supprimer/${e.id}/"
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('Supprimer cet étudiant ?');">🗑️</a>
+                                </td>
+                            </tr>`;
+                    });
+                })
+                .catch(err => console.error("❌ Erreur AJAX :", err));
+
+        }, 300);
+    });
+
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // SweetAlert pour la suppression des étudiants
+    document.querySelectorAll('.btn-delete-student').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const studentName = this.getAttribute('data-student-name');
+            const studentMatricule = this.getAttribute('data-student-matricule');
+            const deleteUrl = this.getAttribute('href');
+            
+            Swal.fire({
+                title: 'Êtes-vous sûr ?',
+                html: `Vous allez supprimer :<br>
+                       <strong>${studentName}</strong><br>
+                       <small>Matricule: ${studentMatricule}</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Oui, supprimer !',
+                cancelButtonText: 'Annuler',
+                reverseButtons: true,
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    // Si vous voulez faire une suppression AJAX :
+                    // return fetch(deleteUrl, {
+                    //     method: 'POST',
+                    //     headers: {
+                    //         'X-CSRFToken': getCookie('csrftoken'),
+                    //         'Content-Type': 'application/json'
+                    //     }
+                    // }).then(response => {
+                    //     if (!response.ok) {
+                    //         throw new Error('Erreur lors de la suppression');
+                    //     }
+                    //     return response.json();
+                    // });
+                    
+                    // Ou redirection simple :
+                    window.location.href = deleteUrl;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Pour suppression AJAX uniquement :
+                    // Swal.fire('Supprimé!', 'L\'étudiant a été supprimé.', 'success')
+                    // .then(() => {
+                    //     window.location.reload();
+                    // });
+                }
+            });
+        });
+    });
+    
+    // Fonction pour récupérer le token CSRF (si suppression AJAX)
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

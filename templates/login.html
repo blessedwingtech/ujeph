@@ -1,0 +1,589 @@
+{% extends 'base.html' %}
+
+{% block title %}SG-UJEPH - Connexion{% endblock %}
+
+{% block content %}
+<style>
+    /* Styles spécifiques à la page de login */
+    .login-page-wrapper {
+        min-height: calc(100vh - 150px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+    }
+    
+    .login-container {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        width: 100%;
+        max-width: 400px;
+    }
+    
+    .logo {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .logo h1 {
+        color: #2c3e50;
+        font-size: 24px;
+        margin-bottom: 5px;
+    }
+    
+    .logo p {
+        color: #7f8c8d;
+        font-size: 14px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .login-input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #ecf0f1;
+        border-radius: 5px;
+        background: #f8f9fa;
+        transition: all 0.3s;
+    }
+    
+    .login-input:focus {
+        border-color: #3498db;
+        outline: none;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+    
+    .btn-login {
+        width: 100%;
+        padding: 14px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 10px;
+    }
+    
+    .btn-login:hover {
+        background: #2980b9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(41, 128, 185, 0.2);
+    }
+    
+    .btn-login:disabled {
+        background: #95a5a6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .login-footer {
+        text-align: center;
+        margin-top: 25px;
+        color: #95a5a6;
+        font-size: 12px;
+        padding-top: 20px;
+        border-top: 1px solid #ecf0f1;
+    }
+    
+    .mou {
+        text-align: center;
+        margin: 15px 0 5px 0;
+    }
+    
+    .mou a {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .mou a:hover {
+        text-decoration: underline;
+    }
+    
+    /* Feedback validation */
+    .validation-feedback {
+        font-size: 13px;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 20px;
+    }
+    
+    .text-info { color: #3498db; }
+    .text-success { color: #27ae60; }
+    .text-danger { color: #e74c3c; }
+    .text-warning { color: #f39c12; }
+    
+    .is-valid {
+        border-color: #27ae60 !important;
+        background: #f9fffb !important;
+    }
+    
+    .is-invalid {
+        border-color: #e74c3c !important;
+        background: #fff9f9 !important;
+    }
+    
+    .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* style supplemenyt */
+    /* Bouton pour voir/masquer le mot de passe */
+.input-group .btn {
+    border: 2px solid #ecf0f1;
+    border-left: none;
+    background: #f8f9fa;
+    transition: all 0.3s;
+}
+
+.input-group .btn:hover {
+    background: #e9ecef;
+    border-color: #3498db;
+}
+
+.input-group .login-input {
+    border-right: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Style pour l'avertissement */
+.alert-warning {
+    border-left: 5px solid #ffc107;
+}
+
+
+/* Style amélioré pour le champ mot de passe */
+.form-switch .form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+    cursor: pointer;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+.form-switch .form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+}
+
+.input-group-text {
+    border: 2px solid #ecf0f1;
+    background-color: #f8f9fa;
+    transition: all 0.3s;
+}
+
+.input-group:focus-within .input-group-text {
+    border-color: #3498db;
+    background-color: white;
+}
+
+.input-group .login-input {
+    border-right: none;
+}
+
+.input-group .login-input.border-start-0 {
+    border-left: none;
+}
+</style>
+
+<div class="login-page-wrapper">
+    <div class="login-container">
+        <div class="logo">
+            <h1>SG-UJEPH</h1>
+            <p>Système de Gestion Universitaire</p>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} mb-3">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+{% if remaining_attempts is not None and remaining_attempts < 5 %}
+<div class="alert alert-warning mb-3">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle fs-4 me-3"></i>
+        <div>
+            <h6 class="mb-1">Attention</h6>
+            <p class="mb-0">
+                Il vous reste <strong>{{ remaining_attempts }}</strong> tentative(s) de connexion.
+                {% if remaining_attempts == 1 %}
+                <br><small class="text-danger">Dernière tentative !</small>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+        {% if error %}
+            <div class="alert {% if error_type == 'account_disabled' %}alert-warning
+                            {% else %}alert-danger{% endif %} mb-3">
+                {% if error_type == 'account_disabled' %}
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-person-x fs-4 me-3"></i>
+                    <div>
+                        <h6 class="mb-1">Compte désactivé</h6>
+                        <p class="mb-0">{{ error }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-shield-exclamation fs-4 me-3"></i>
+                    <div>
+                        <h6 class="mb-1">Échec de connexion</h6>
+                        <p class="mb-0">{{ error }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if account_disabled %}
+                <div class="mt-3 pt-2 border-top">
+                    <p class="small mb-1"><strong>Support technique :</strong></p>
+                    <ul class="small mb-0 ps-3">
+                        <li>📧 <a href="mailto:admin@ujeph.edu" class="alert-link">admin@ujeph.edu</a></li>
+                        <li>📞 (509) XX XX XX XX</li>
+                        <li>🕘 Lundi-Vendredi, 8h-16h</li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        {% endif %}
+     
+        
+        <form method="post" id="loginForm" novalidate>
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" id="username" name="username" 
+                       class="login-input"
+                       placeholder="Entrez votre nom d'utilisateur"
+                       required
+                       oninput="validateUsername(this.value)"
+                       onblur="validateOnBlur(this.value)"
+                       value="{{ form.username.value|default:'' }}">
+                <div id="usernameFeedback" class="validation-feedback">
+                    <span id="usernameIconText">ⓘ</span>
+                    <span id="usernameMessage">Doit commencer par une lettre ou _</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password" class="form-label">
+                    <i class="bi bi-key me-2"></i>Mot de passe
+                </label>
+                
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">
+                        <i class="bi bi-lock text-muted"></i>
+                    </span>
+                    <input type="password" id="password" name="password" 
+                        class="form-control login-input border-start-0"
+                        placeholder="Votre mot de passe"
+                        required>
+                    
+                    <div class="input-group-text bg-light border-start-0">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" 
+                                id="showPassword" role="switch"
+                                style="cursor: pointer;">
+                            <label class="form-check-label small ms-2" 
+                                for="showPassword" style="cursor: pointer; color: #666;">
+                                👁️
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mou">
+                <p class="small">
+                    <a href="{% url 'accounts:password_reset' %}">Mot de passe oublié?  </a>
+                </p>
+            </div>
+            
+            <button type="submit" class="btn-login" id="submitBtn">
+                <span id="submitText">Se connecter</span>
+                <span id="submitSpinner" class="spinner d-none"></span>
+            </button>
+        </form>
+        
+        <div class="login-footer">
+            © Université Jérusalem de Pignon Haïti
+        </div>
+    </div>
+</div>
+
+<script>
+// Variables globales
+let debounceTimer;
+let lastValidUsername = '';
+
+// Validation en temps réel
+function validateUsername(username) {
+    const feedback = document.getElementById('usernameFeedback');
+    const iconText = document.getElementById('usernameIconText');
+    const usernameInput = document.getElementById('username');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    username = username.trim();
+    
+    // Réinitialiser
+    feedback.className = 'validation-feedback';
+    usernameInput.classList.remove('is-valid', 'is-invalid');
+    submitBtn.disabled = false;
+    
+    // Cas 1: Champ vide
+    if (username.length === 0) {
+        feedback.className = 'validation-feedback text-info';
+        iconText.textContent = 'ⓘ';
+        usernameMessage.textContent = 'Doit commencer par une lettre ou _';
+        return;
+    }
+    
+    // Cas 2: Format invalide (pas une lettre ou underscore au début)
+    const isValidFormat = /^[a-zA-Z_].*$/.test(username);
+    if (!isValidFormat) {
+        feedback.className = 'validation-feedback text-danger';
+        iconText.textContent = '✗';
+        usernameMessage.textContent = 'Doit commencer par une lettre (a-z) ou underscore (_)';
+        usernameInput.classList.add('is-invalid');
+        submitBtn.disabled = true;
+        return;
+    }
+    
+    // Cas 3: Trop court
+    if (username.length < 3) {
+        feedback.className = 'validation-feedback text-warning';
+        iconText.textContent = '⚠';
+        usernameMessage.textContent = 'Minimum 3 caractères';
+        return;
+    }
+    
+    // Cas 4: Format valide et longueur OK
+    // Vérifier si c'est le même username que la dernière vérification valide
+    if (username === lastValidUsername) {
+        feedback.className = 'validation-feedback text-info';
+        iconText.textContent = 'ⓘ';
+        usernameMessage.textContent = 'Vérification en cours...';
+    } else {
+        feedback.className = 'validation-feedback text-info';
+        iconText.textContent = '⏳';
+        usernameMessage.textContent = 'Vérification en cours...';
+    }
+    
+    // Debounce pour éviter trop de requêtes
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        checkUsernameExistence(username);
+    }, 800);
+}
+
+// Validation au blur
+function validateOnBlur(username) {
+    username = username.trim();
+    
+    // Si le champ est vide ou trop court, on garde le message actuel
+    if (username.length === 0 || username.length < 3) {
+        return;
+    }
+    
+    // Si format invalide, on confirme l'erreur
+    const isValidFormat = /^[a-zA-Z_].*$/.test(username);
+    if (!isValidFormat) {
+        const feedback = document.getElementById('usernameFeedback');
+        const iconText = document.getElementById('usernameIconText');
+        const usernameInput = document.getElementById('username');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        feedback.className = 'validation-feedback text-danger';
+        iconText.textContent = '✗';
+        usernameMessage.textContent = 'Format invalide. Doit commencer par une lettre ou _';
+        usernameInput.classList.add('is-invalid');
+        submitBtn.disabled = true;
+    }
+}
+
+// Vérification AJAX de l'existence
+function checkUsernameExistence(username) {
+    const feedback = document.getElementById('usernameFeedback');
+    const iconText = document.getElementById('usernameIconText');
+    const usernameInput = document.getElementById('username');
+    
+    // Afficher l'état de chargement
+    feedback.className = 'validation-feedback text-info';
+    iconText.textContent = '⏳';
+    usernameMessage.textContent = 'Vérification en cours...';
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch('/accounts/check-username/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({username: username})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Erreur réseau: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Réponse serveur:', data); // Pour debug
+        
+        if (data.error) {
+            // Erreur serveur
+            feedback.className = 'validation-feedback text-danger';
+            iconText.textContent = '✗';
+            usernameMessage.textContent = 'Erreur de vérification';
+            usernameInput.classList.add('is-invalid');
+            return;
+        }
+        
+        if (!data.valid) {
+            // Format invalide côté serveur
+            feedback.className = 'validation-feedback text-danger';
+            iconText.textContent = '✗';
+            usernameMessage.textContent = data.message || 'Format invalide';
+            usernameInput.classList.add('is-invalid');
+            return;
+        }
+        
+        // Format valide, vérifier existence
+        if (data.exists) {
+            feedback.className = 'validation-feedback text-success';
+            iconText.textContent = '✓';
+            usernameMessage.textContent = data.message || 'Utilisateur valide';
+            usernameInput.classList.add('is-valid');
+            usernameInput.classList.remove('is-invalid');
+            lastValidUsername = username; // Mémoriser le dernier username valide
+        } else {
+            feedback.className = 'validation-feedback text-danger';
+            iconText.textContent = '✗';
+            usernameMessage.textContent = data.message || 'Utilisateur non reconnu';
+            usernameInput.classList.add('is-invalid');
+            usernameInput.classList.remove('is-valid');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur fetch:', error);
+        feedback.className = 'validation-feedback text-warning';
+        iconText.textContent = '';
+        //iconText.textContent = '⚠';
+        usernameMessage.textContent = '';
+        //usernameMessage.textContent = 'Impossible de vérifier (erreur réseau)';
+        usernameInput.classList.remove('is-valid', 'is-invalid');
+    });
+}
+
+// Gestion de la soumission
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    
+    // Validation basique
+    if (usernameInput.value.trim().length === 0) {
+        e.preventDefault();
+        alert('Veuillez entrer votre nom d\'utilisateur');
+        usernameInput.focus();
+        return;
+    }
+    
+    if (passwordInput.value.length === 0) {
+        e.preventDefault();
+        alert('Veuillez entrer votre mot de passe');
+        passwordInput.focus();
+        return;
+    }
+    
+    // Afficher le spinner
+    submitText.classList.add('d-none');
+    submitSpinner.classList.remove('d-none');
+    submitBtn.disabled = true;
+});
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+    const usernameInput = document.getElementById('username');
+    
+    // Focus sur le champ username
+    usernameInput.focus();
+    
+    // Validation initiale si déjà rempli
+    if (usernameInput.value) {
+        validateUsername(usernameInput.value);
+    }
+    
+    // Ajouter un log pour debug
+    console.log('Page login chargée');
+});
+
+//js pour supplement..
+// Afficher/masquer le mot de passe
+// Afficher/masquer le mot de passe avec checkbox
+document.getElementById('showPassword').addEventListener('change', function() {
+    const passwordInput = document.getElementById('password');
+    const label = this.nextElementSibling;
+    
+    if (this.checked) {
+        passwordInput.type = 'text';
+        label.innerHTML = '🙈';
+    } else {
+        passwordInput.type = 'password';
+        label.innerHTML = '👁️';
+    }
+});
+
+// Focus automatique sur le champ username
+document.addEventListener('DOMContentLoaded', function() {
+    const usernameInput = document.getElementById('username');
+    if (usernameInput) {
+        usernameInput.focus();
+    }
+    
+    // Validation initiale si déjà rempli
+    if (usernameInput.value) {
+        validateUsername(usernameInput.value);
+    }
+    
+    console.log('Page login chargée');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Annonces {{ type_annonce }} - SG-UJEPH{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- En-tête -->
+            <div class="text-center mb-5">
+                <div class="mb-3">
+                    <span class="badge 
+                                {% if type_annonce == 'urgence' %}bg-danger
+                                {% elif type_annonce == 'cours' %}bg-success
+                                {% elif type_annonce == 'examen' %}bg-warning text-dark
+                                {% else %}bg-primary{% endif %} 
+                                px-4 py-2"
+                          style="font-size: 1rem;">
+                        <i class="fas fa-{{ annonces.first.get_icon }} me-2"></i>
+                        Annonces {{ type_annonce|capfirst }}
+                    </span>
+                </div>
+                <h1 class="mb-3">Annonces {{ type_annonce|capfirst }}</h1>
+                <p class="text-muted mb-0">
+                    {{ annonces.count }} annonce{{ annonces|pluralize }} trouvée{{ annonces|pluralize }}
+                </p>
+            </div>
+            
+            <!-- Liste des annonces -->
+            {% if annonces %}
+            <div class="row">
+                {% for annonce in annonces %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    {% if annonce.est_important %}
+                                    <span class="badge bg-warning text-dark mb-2">
+                                        <i class="fas fa-star me-1"></i>Important
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">
+                                    {{ annonce.date_publication|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                            
+                            <h5 class="card-title">{{ annonce.titre }}</h5>
+                            <p class="card-text text-muted">
+                                {{ annonce.contenu|truncatewords:30 }}
+                            </p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div>
+                                    {% if annonce.destinataire_tous %}
+                                    <span class="badge bg-secondary">Tous</span>
+                                    {% else %}
+                                        {% if annonce.destinataire_etudiants %}
+                                        <span class="badge bg-primary">Étudiants</span>
+                                        {% endif %}
+                                        {% if annonce.destinataire_professeurs %}
+                                        <span class="badge bg-success">Professeurs</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                    Lire plus <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'academics:annonces_actives' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Retour à toutes les annonces
+                </a>
+            </div>
+            
+            {% else %}
+            <!-- État vide -->
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-newspaper fa-4x text-muted"></i>
+                </div>
+                <h4 class="text-muted">Aucune annonce {{ type_annonce }}</h4>
+                <p class="text-muted mb-4">Il n'y a actuellement aucune annonce de ce type.</p>
+                <a href="{% url 'academics:annonces_actives' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Voir toutes les annonces
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

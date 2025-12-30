@@ -1,0 +1,52 @@
+# 🎓 Système de Gestion Universitaire - UJEPH
+
+## 📋 Description
+Plateforme web Django complète pour la gestion académique de l'Université UJEPH. Système multi-utilisateurs avec gestion des étudiants, professeurs, cours, notes et annonces.
+
+## ✨ Fonctionnalités principales
+
+### 👤 **Gestion des utilisateurs**
+- **3 rôles** : Étudiant, Professeur, Administrateur
+- **3 niveaux d'administration** : Super Admin, Admin Académique, Admin Utilisateurs
+- **Inscription automatique** avec génération de matricule (format: `ANNEE-CODE_FACULTE-NUMERO`)
+- **Première connexion** avec changement de mot de passe obligatoire
+- **Protection avancée** contre les attaques par force brute
+
+### 🏫 **Gestion académique**
+- Création et gestion des facultés/départements
+- Attribution des cours aux professeurs
+- Inscription automatique des étudiants aux cours de leur niveau
+- Gestion des semestres (S1, S2) et années académiques
+
+### 📊 **Système de notes avancé**
+- Workflow complet : `Brouillon` → `Soumise` → `Publiée`/`Rejetée`
+- Validation par les administrateurs académiques
+- Calcul automatique des moyennes par semestre
+- Historique des promotions et changements de niveau
+
+### 📢 **Système d'annonces**
+- Publication d'annonces ciblées (étudiants, professeurs, admins)
+- Priorités et types d'annonces configurables
+- Dates de publication et d'expiration
+- Fichiers joints et images
+
+### 🔐 **Sécurité & audit**
+- **Permissions granulaires** par fonctionnalité
+- **Journal d'audit complet** de toutes les actions
+- **Sessions auto-expirantes** (5 minutes d'inactivité)
+- **Protection CSRF** et validation des entrées
+
+## 🚀 Installation rapide
+
+### Prérequis
+- Python 3.9+
+- Django 4.2+
+- MySQL 5.7+ (configuré dans le projet)
+- pip
+
+### Étapes d'installation
+
+1. **Cloner le projet**
+```bash
+git clone <url-du-projet>
+cd sg_ujeph

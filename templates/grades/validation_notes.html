@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Validation des Notes - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4"> 
+    <div class="mb-4">
+        <h3>📋 Validation des Notes</h3>
+        <p class="text-muted">
+            Cours ayant des notes soumises par les professeurs
+        </p>
+        <a href="{% url 'grades:gestion_notes_publiees' %}" class="btn btn-primary">
+            <i class="bi bi-pencil-square me-1"></i> Modifier les notes publiées
+        </a>
+    </div>
+
+    {% if cours_soumis %}
+    <div class="row g-4">
+        {% for cours in cours_soumis %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-warning text-dark">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>{{ cours.intitule|truncatechars:25 }}</strong>
+                        <span class="badge bg-dark">{{ cours.notes_soumises_count }}</span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <p class="mb-2">
+                        <i class="bi bi-person"></i>
+                        <strong>Professeur:</strong><br>
+                        {{ cours.professeur.get_full_name }}
+                    </p>
+
+                    <p class="mb-2">
+                        <i class="bi bi-building"></i>
+                        <strong>Faculté:</strong><br>
+                        {{ cours.faculte.nom }}
+                    </p>
+
+                    <p class="mb-2">
+                        <i class="bi bi-clock"></i>
+                        <strong>Soumis le:</strong><br>
+                        {% if cours.date_derniere_soumission %}
+                            {{ cours.date_derniere_soumission|date:"d/m/Y H:i" }}
+                        {% else %}
+                            <span class="text-muted">Non disponible</span>
+                        {% endif %}
+                    </p>
+
+                    <div class="alert alert-warning small mt-3 mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        {{ cours.notes_soumises_count }} note(s) en attente
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                    <a href="{% url 'grades:traiter_cours_notes' cours.id %}"
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i> Examiner
+                    </a>
+                    <small class="text-muted">Valider ou rejeter</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="alert alert-success">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+            <div>
+                <h5 class="mb-1">✅ Aucun cours en attente</h5>
+                <p class="mb-0">Toutes les notes ont été traitées.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

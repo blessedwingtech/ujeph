@@ -1,0 +1,210 @@
+<!-- accounts/templates/accounts/gestion_utilisateurs.html -->
+{% extends 'base.html' %}
+{% block title %}Gestion des Utilisateurs{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Dashboard
+            </a>
+        </div>
+        <h3 class="mb-0">
+            <i class="bi bi-people-fill"></i> Gestion des Utilisateurs
+        </h3>
+        <div class="text-muted small">
+            Admin: {{ user.get_full_name }}
+        </div>
+    </div>
+
+    <!-- Filtres rapides -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" 
+                           name="search" 
+                           class="form-control" 
+                           placeholder="Rechercher (nom, email, username)"
+                           value="{{ search_query }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="role" class="form-select">
+                        <option value="">Tous les rôles</option>
+                        {% for role_value, role_label in roles %}
+                        <option value="{{ role_value }}" {% if selected_role == role_value %}selected{% endif %}>
+                            {{ role_label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="statut" class="form-select">
+                        <option value="">Tous les statuts</option>
+                        <option value="actif" {% if selected_statut == 'actif' %}selected{% endif %}>Actifs</option>
+                        <option value="inactif" {% if selected_statut == 'inactif' %}selected{% endif %}>Inactifs</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter"></i> Filtrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+     <a href="{% url 'accounts:creer_admin' %}" class="btn btn-success me-2">+ Nouvel admin</a>
+
+    <!-- Liste des utilisateurs -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Utilisateurs ({{ utilisateurs.count }})</h5>
+                <div class="text-muted small">
+                    {% if selected_role or selected_statut or search_query %}
+                    Filtres actifs
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            {% if utilisateurs %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Rôle</th>
+                            <th>Contact</th>
+                            <th>Inscription</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in utilisateurs %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar me-3">
+                                        <i class="bi bi-person-circle fs-3 text-muted"></i>
+                                    </div>
+                                    <div>
+                                        <strong>{{ u.get_full_name|default:u.username }}</strong><br>
+                                        <small class="text-muted">@{{ u.username }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if u.role == 'admin' %}bg-dark
+                                    {% elif u.role == 'prof' %}bg-info
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ u.get_role_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if u.email %}
+                                <small>{{ u.email }}</small>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ u.date_joined|date:"d/m/y" }}</small>
+                            </td>
+                            <td>
+                                {% if u.is_active %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check"></i> Actif
+                                </span>
+                                {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x"></i> Inactif
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'accounts:detail_utilisateur' u.id %}" 
+                                       class="btn btn-outline-primary" title="Détails">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    
+                                    <!-- Bouton Activation/Désactivation -->
+                                    <form method="post" 
+                                          action="{% url 'accounts:toggle_activation' u.id %}"
+                                          class="d-inline">
+                                        {% csrf_token %}
+                                        {% if u.is_active %}
+                                        <button type="submit" 
+                                                class="btn btn-outline-danger"
+                                                title="Désactiver"
+                                                onclick="return confirm('Désactiver {{ u.username }} ?')">
+                                            <i class="bi bi-person-x"></i>
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" 
+                                                class="btn btn-outline-success"
+                                                title="Activer"
+                                                onclick="return confirm('Activer {{ u.username }} ?')">
+                                            <i class="bi bi-person-check"></i>
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-people display-1 text-muted"></i>
+                <h5 class="text-muted mt-3">Aucun utilisateur trouvé</h5>
+                {% if selected_role or selected_statut or search_query %}
+                <p class="text-muted">Essayez d'autres critères de recherche</p>
+                <a href="{% url 'accounts:gestion_utilisateurs' %}" class="btn btn-sm btn-outline-primary">
+                    Réinitialiser les filtres
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="alert alert-info mt-3 small">
+        <i class="bi bi-info-circle"></i>
+        <strong>Instructions :</strong>
+        <ul class="mb-0 mt-1">
+            <li>Un compte <span class="badge bg-danger">inactif</span> ne peut pas se connecter</li>
+            <li>Cliquez sur <i class="bi bi-eye"></i> pour plus de détails</li>
+            <li>Utilisez les filtres pour trouver rapidement un utilisateur</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+.avatar {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.btn-group .btn {
+    padding: 0.25rem 0.5rem;
+}
+</style>
+{% endblock %}

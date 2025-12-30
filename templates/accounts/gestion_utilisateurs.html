@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des Utilisateurs{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <!-- Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+
+        <h3 class="mb-0">
+            <i class="bi bi-people-fill"></i> Gestion des Utilisateurs
+        </h3>
+
+        <div class="text-muted small">
+            Admin : {{ user.get_full_name }}
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Filtres -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" id="searchInput" class="form-control"
+                           placeholder="Rechercher..." value="{{ search_query }}">
+                </div>
+
+                <div class="col-md-3">
+                    <select id="roleSelect" class="form-select">
+                        <option value="">Tous les rôles</option>
+                        {% for role_value, role_label in roles %}
+                        <option value="{{ role_value }}" {% if selected_role == role_value %}selected{% endif %}>
+                            {{ role_label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <select id="statutSelect" class="form-select">
+                        <option value="">Tous les statuts</option>
+                        <option value="actif" {% if selected_statut == 'actif' %}selected{% endif %}>Actifs</option>
+                        <option value="inactif" {% if selected_statut == 'inactif' %}selected{% endif %}>Inactifs</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <button id="resetFilters" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="mb-3">
+        <a href="{% url 'accounts:creer_admin' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Nouvel admin
+        </a>
+        <a href="{% url 'accounts:liste_admins' %}" class="btn btn-outline-info">
+            <i class="bi bi-plus-circle"></i> Les admins
+        </a> 
+        <span class="text-muted ms-3">
+            <span id="totalCount">{{ total_users }}</span> utilisateur(s)
+        </span>
+    </div>
+
+    <!-- Tableau -->
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Rôle</th>
+                        <th>Contact</th>
+                        <th>Inscription</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody id="usersTableBody">
+                    {% include 'accounts/_users_table_rows.html' %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="text-center py-5 d-none">
+        <div class="spinner-border text-primary"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const searchInput = document.getElementById('searchInput');
+    const roleSelect = document.getElementById('roleSelect');
+    const statutSelect = document.getElementById('statutSelect');
+    const resetBtn = document.getElementById('resetFilters');
+    const usersTableBody = document.getElementById('usersTableBody');
+    const totalCount = document.getElementById('totalCount');
+    const loading = document.getElementById('loading');
+
+    let timer = null;
+
+    function loadData(page = 1) {
+        const params = new URLSearchParams({
+            page: page,
+            search: searchInput.value,
+            role: roleSelect.value,
+            statut: statutSelect.value
+        });
+
+        loading.classList.remove('d-none');
+        usersTableBody.style.opacity = '0.5';
+
+        fetch(`?${params.toString()}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => {
+            const count = response.headers.get('X-Total-Count');
+            if (count) totalCount.textContent = count;
+            return response.text();
+        })
+        .then(html => {
+            usersTableBody.innerHTML = html;
+            history.pushState({}, '', `?${params.toString()}`);
+        })
+        .finally(() => {
+            loading.classList.add('d-none');
+            usersTableBody.style.opacity = '1';
+        });
+    }
+
+    window.loadPage = function (page) {
+        loadData(page);
+    };
+
+
+    resetBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        roleSelect.value = '';
+        statutSelect.value = '';
+        loadData(1);
+    });
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => loadData(1), 400);
+    });
+
+    roleSelect.addEventListener('change', () => loadData(1));
+    statutSelect.addEventListener('change', () => loadData(1));
+
+    window.addEventListener('popstate', () => {
+        const params = new URLSearchParams(location.search);
+        loadData(params.get('page') || 1);
+    });
+});
+</script>
+{% endblock %}

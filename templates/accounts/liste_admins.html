@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Liste des Administrateurs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-person-shield text-primary"></i> Administrateurs
+            </h2>
+            <p class="text-muted mb-0">Liste de tous les administrateurs du système</p>
+        </div>
+        <div>
+            <a href="{% url 'accounts:creer_admin' %}" class="btn btn-success">
+                <i class="bi bi-person-plus"></i> Nouvel Administrateur
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom d'utilisateur</th>
+                            <th>Nom complet</th>
+                            <th>Email</th>
+                            <th>Niveau d'accès</th>
+                            <th>Date de nomination</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for admin in admins %}
+                        <tr>
+                            <td>
+                                <strong>{{ admin.user.username }}</strong>
+                                {% if admin.user == request.user %}
+                                <span class="badge bg-primary ms-1">Vous</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ admin.user.get_full_name }}</td>
+                            <td>{{ admin.user.email }}</td>
+                            <td>
+                                {% if admin.niveau_acces == 'super' %}
+                                    <span class="badge bg-danger">Super Admin</span>
+                                {% elif admin.niveau_acces == 'academique' %}
+                                    <span class="badge bg-warning">Admin Académique</span>
+                                {% else %}
+                                    <span class="badge bg-info">Gestionnaire</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ admin.date_nomination|date:"d/m/Y" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'admin:accounts_admin_change' admin.id %}" 
+                                       class="btn btn-outline-primary" target="_blank">
+                                        <i class="bi bi-pencil"></i> Modifier
+                                    </a>
+                                    <a href="{% url 'admin:accounts_user_change' admin.user.id %}" 
+                                       class="btn btn-outline-secondary" target="_blank">
+                                        <i class="bi bi-person"></i> User
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="bi bi-people display-6 text-muted"></i>
+                                <p class="mt-2 mb-0">Aucun administrateur trouvé</p>
+                                <a href="{% url 'accounts:creer_admin' %}" class="btn btn-sm btn-success mt-2">
+                                    Créer le premier administrateur
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

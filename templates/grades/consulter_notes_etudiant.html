@@ -1,0 +1,528 @@
+<!-- templates/grades/consulter_notes_etudiant.html -->
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Mes Notes - Étudiant{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- En-tête avec situation actuelle -->
+    <div class="card border-primary shadow-sm mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="bi bi-person-badge"></i> Situation académique</h4>
+            <span class="badge bg-light text-dark fs-6">{{ annee_courante }}</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="row">
+                        <!-- Niveau & Semestre -->
+                        <div class="col-6 col-md-4 mb-3 text-center">
+                            <div class="display-6 fw-bold text-primary">
+                                {{ etudiant.niveau }}{{ etudiant.semestre_courant }}
+                            </div>
+                            <small class="text-muted">Niveau & Semestre</small>
+                        </div>
+                        
+                        <!-- Statut (DÉJÀ DANS LE CONTEXTE) -->
+                        <div class="col-6 col-md-4 mb-3 text-center">
+                            <div class="display-6 fw-bold 
+                                {% if situation_actuelle.statut == 'actif' %}text-success
+                                {% elif situation_actuelle.statut == 'diplome' %}text-primary
+                                {% else %}text-danger{% endif %}">
+                                {{ situation_actuelle.statut|title }}
+                            </div>
+                            <small class="text-muted">Statut académique</small>
+                        </div>
+                        
+                        <!-- Cours du semestre -->
+                        <div class="col-6 col-md-4 mb-3 text-center">
+                            <div class="display-6 fw-bold 
+                                {% if cours_semestre_actuel.count == 0 %}text-danger
+                                {% else %}text-info{% endif %}">
+                                {{ cours_semestre_actuel.count }}
+                            </div>
+                            <small class="text-muted">Cours {{ semestre_actuel }}</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Faculté -->
+                    <div class="mt-2">
+                        <strong>Faculté:</strong> {{ etudiant.faculte.nom }}
+                        {% if etudiant.date_inscription %}
+                        <br>
+                        <small class="text-muted">
+                            Inscrit depuis: {{ etudiant.date_inscription|date:"F Y" }}
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Section Moyenne - UNIFORMISÉE À 70/100 -->
+                <div class="col-md-4 text-center">
+                    {% if semestre_actuel == 'S1' %}
+                        <!-- EN S1 : Moyenne S1 avec seuil à 70 -->
+                        {% if moyenne_s1 %}
+                        <div class="display-4 fw-bold 
+                            {% if moyenne_s1 >= 70 %}text-success
+                            {% else %}text-warning{% endif %}">
+                            {{ moyenne_s1|floatformat:1 }}
+                        </div>
+                        <small class="text-muted">
+                            Moyenne S1<br>
+                            <span class="small">(Seuil: 70/100)</span>
+                        </small>
+                        <div class="mt-2">
+                            {% if moyenne_s1 >= 70 %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> S1 validé
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning">
+                                <i class="bi bi-exclamation-triangle"></i> S1 en risque
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <!-- Pas encore de notes -->
+                        <div class="display-4 fw-bold text-secondary">
+                            --
+                        </div>
+                        <small class="text-muted">Moyenne S1<br>(en attente)</small>
+                        <div class="mt-2">
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-clock"></i> Notes en attente
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                    {% elif semestre_actuel == 'S2' %}
+                        <!-- EN S2 : Moyenne annuelle avec décision à 70 -->
+                        {% if moyenne_generale %}
+                        <div class="display-4 fw-bold 
+                            {% if moyenne_generale >= 70 %}text-success
+                            {% else %}text-danger{% endif %}">
+                            {{ moyenne_generale|floatformat:1 }}
+                        </div>
+                        <small class="text-muted">
+                            Moyenne annuelle<br>
+                            <span class="small">(S1 + S2)</span>
+                        </small>
+                        <div class="mt-2">
+                            {% if moyenne_generale >= 70 %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle"></i> Admis (≥ 70)
+                            </span>
+                            {% else %}
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle"></i> Redoublement
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <!-- Pas encore de décision -->
+                        <div class="display-4 fw-bold text-secondary">
+                            --
+                        </div>
+                        <small class="text-muted">Moyenne annuelle<br>(en attente)</small>
+                        <div class="mt-2">
+                            <span class="badge bg-info">
+                                <i class="bi bi-arrow-clockwise"></i> En progression
+                            </span>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Semestre en cours -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-book-half"></i> 
+                Semestre en cours : {{ semestre_actuel }} {{ annee_courante }}
+                {% if moyenne_semestre_actuel %}
+                <span class="float-end">
+                    Moyenne {{ semestre_actuel }}: 
+                    <span class="badge bg-{% if moyenne_semestre_actuel >= 70 %}success{% else %}danger{% endif %} fs-6">
+                        {{ moyenne_semestre_actuel|floatformat:1 }}/100
+                    </span>
+                </span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if cours_semestre_actuel %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Cours</th>
+                            <th>Crédits</th>
+                            <th>Professeur</th>
+                            <th>Note</th>
+                            <th>Résultat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cours in cours_semestre_actuel %}
+                        <tr>
+                            <td><code>{{ cours.code }}</code></td>
+                            <td>{{ cours.intitule }}</td>
+                            <td><span class="badge bg-secondary">{{ cours.credits }}</span></td>
+                            <td>
+                                {% if cours.professeur %}
+                                    {{ cours.professeur.get_full_name }}
+                                {% else %}
+                                    <span class="text-muted">À assigner</span>
+                                {% endif %}
+                            </td> 
+
+                            <td>
+                                {% get_note_for_cours cours_avec_notes cours.id as note %}
+                                {% if note %}
+                                <span class="badge bg-{{ note.valeur|couleur_mention_70 }} fs-6">
+                                    {{ note.valeur }}/100
+                                </span>
+                                {% else %}
+                                <span class="badge bg-light text-dark border">
+                                    En attente
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% get_note_for_cours cours_avec_notes cours.id as note %}
+                                {% if note %}
+                                    {% if note.valeur >= 70 %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> Validé
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-x-circle"></i> Échec
+                                    </span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-clock"></i> En attente
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-book display-4 text-muted"></i>
+                <p class="text-muted mt-2">Aucun cours assigné ce semestre</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Onglets pour les détails -->
+    <ul class="nav nav-tabs mb-4" id="notesTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="resume-tab" data-bs-toggle="tab" data-bs-target="#resume" type="button">
+                <i class="bi bi-graph-up"></i> Résumé {{ annee_courante }}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="historique-tab" data-bs-toggle="tab" data-bs-target="#historique" type="button">
+                <i class="bi bi-clock-history"></i> Historique
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="notesTabContent">
+        <!-- Onglet Résumé -->
+        <div class="tab-pane fade show active" id="resume" role="tabpanel">
+            <div class="row">
+                <!-- S1 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                Semestre 1
+                                {% if moyennes_par_annee and moyennes_par_annee|get_item:annee_courante %}
+                                    {% with moyenne_s1=moyennes_par_annee|get_item:annee_courante|get_item:"S1" %}
+                                        {% if moyenne_s1 %}
+                                        <span class="float-end">
+                                            {{ moyenne_s1|floatformat:2 }}/100
+                                        </span>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% with notes_s1=notes_par_annee|get_item:annee_courante|get_item:"S1" %}
+                                {% if notes_s1 %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            {% for note in notes_s1 %}
+                                            <tr>
+                                                <td>{{ note.cours.intitule|truncatechars:30 }}</td>
+                                                <td class="text-end">
+                                                    <span class="badge bg-{{ note.valeur|couleur_mention }}">
+                                                        {{ note.valeur }}/100
+                                                    </span>
+                                                </td>
+                                                <td class="text-muted text-end small">
+                                                    {{ note.date_validation|date:"d/m/Y"|default:"--" }}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <p class="text-muted text-center py-4">Aucune note pour S1</p>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- S2 -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-warning text-white">
+                            <h5 class="mb-0">
+                                Semestre 2
+                                {% if moyennes_par_annee and moyennes_par_annee|get_item:annee_courante %}
+                                    {% with moyenne_s2=moyennes_par_annee|get_item:annee_courante|get_item:"S2" %}
+                                        {% if moyenne_s2 %}
+                                        <span class="float-end">
+                                            {{ moyenne_s2|floatformat:2 }}/100
+                                        </span>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% with notes_s2=notes_par_annee|get_item:annee_courante|get_item:"S2" %}
+                                {% if notes_s2 %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            {% for note in notes_s2 %}
+                                            <tr>
+                                                <td>{{ note.cours.intitule|truncatechars:30 }}</td>
+                                                <td class="text-end">
+                                                    <span class="badge bg-{{ note.valeur|couleur_mention }}">
+                                                        {{ note.valeur }}/100
+                                                    </span>
+                                                </td>
+                                                <td class="text-muted text-end small">
+                                                    {{ note.date_validation|date:"d/m/Y"|default:"--" }}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <p class="text-muted text-center py-4">Aucune note pour S2</p>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Moyennes détaillées -->
+            {% if moyenne_generale %}
+            <div class="card border-{% if moyenne_generale >= 70 %}success{% else %}warning{% endif %} shadow-sm">
+                <div class="card-header bg-{% if moyenne_generale >= 70 %}success{% else %}warning{% endif %} text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calculator"></i> Calcul de la moyenne générale
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="display-4 fw-bold text-info">
+                                {{ moyenne_s1|default:"--" }}
+                            </div>
+                            <small class="text-muted">Moyenne S1</small>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="display-4 fw-bold text-warning">
+                                {{ moyenne_s2|default:"--" }}
+                            </div>
+                            <small class="text-muted">Moyenne S2</small>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="display-4 fw-bold {% if moyenne_generale >= 70 %}text-success{% else %}text-danger{% endif %}">
+                                {{ moyenne_generale|floatformat:2 }}
+                            </div>
+                            <small class="text-muted">Moyenne générale</small>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <div class="alert alert-{% if moyenne_generale >= 70 %}success{% else %}danger{% endif %}">
+                            <h5 class="mb-0">
+                                {% if moyenne_generale >= 70 %}
+                                <i class="bi bi-check-circle-fill"></i> ADMIS - Moyenne ≥ 70/100
+                                {% else %}
+                                <i class="bi bi-x-circle-fill"></i> REDOUBLEMENT - Moyenne < 70/100
+                                {% endif %}
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Onglet Historique -->
+        <div class="tab-pane fade" id="historique" role="tabpanel">
+            <!-- Vérifier s'il y a un historique -->
+            {% if notes_par_annee %}
+                <!-- Années précédentes -->
+                {% for annee, semestres in notes_par_annee.items %}
+                    {% if annee != annee_courante %}
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0">Année académique {{ annee }}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <!-- S1 -->
+                                <div class="col-md-6">
+                                    <h6>S1</h6>
+                                    {% if "S1" in semestres %}
+                                        {% with notes_s1=semestres.S1 %}
+                                        {% if notes_s1 %}
+                                        <ul class="list-unstyled">
+                                            {% for note in notes_s1 %}
+                                            <li class="mb-1">
+                                                {{ note.cours.intitule|truncatechars:25 }}
+                                                <span class="badge bg-{{ note.valeur|couleur_mention }} float-end">
+                                                    {{ note.valeur }}/100
+                                                </span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% else %}
+                                        <p class="text-muted">Aucune note</p>
+                                        {% endif %}
+                                        {% endwith %}
+                                    {% else %}
+                                    <p class="text-muted">Aucune note</p>
+                                    {% endif %}
+                                </div>
+
+                                <!-- S2 -->
+                                <div class="col-md-6">
+                                    <h6>S2</h6>
+                                    {% if "S2" in semestres %}
+                                        {% with notes_s2=semestres.S2 %}
+                                        {% if notes_s2 %}
+                                        <ul class="list-unstyled">
+                                            {% for note in notes_s2 %}
+                                            <li class="mb-1">
+                                                {{ note.cours.intitule|truncatechars:25 }}
+                                                <span class="badge bg-{{ note.valeur|couleur_mention }} float-end">
+                                                    {{ note.valeur }}/100
+                                                </span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% else %}
+                                        <p class="text-muted">Aucune note</p>
+                                        {% endif %}
+                                        {% endwith %}
+                                    {% else %}
+                                    <p class="text-muted">Aucune note</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            <!-- Historique des promotions -->
+            {% if historique_promotions %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-diagram-3"></i> Parcours académique</h5>
+                </div>
+                <div class="card-body">
+                    {% for promo in historique_promotions %}
+                    <div class="alert 
+                        {% if promo.decision == 'admis' %}alert-success
+                        {% elif promo.decision == 'redouble' %}alert-danger
+                        {% elif promo.decision == 'diplome' %}alert-primary
+                        else %}alert-info{% endif %} mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>
+                                    {{ promo.ancien_niveau }}{{ promo.ancien_semestre }} 
+                                    → {{ promo.nouveau_niveau }}{{ promo.nouveau_semestre }}
+                                </strong>
+                                <br>
+                                <small>
+                                    {{ promo.date_promotion|date:"d/m/Y" }}
+                                    {% if promo.annee_academique %} | {{ promo.annee_academique }}{% endif %}
+                                    {% if promo.moyenne_generale %}
+                                    | Moyenne: {{ promo.moyenne_generale|floatformat:2 }}/100
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <span class="badge 
+                                {% if promo.decision == 'admis' %}bg-success
+                                {% elif promo.decision == 'redouble' %}bg-danger
+                                {% elif promo.decision == 'diplome' %}bg-primary
+                                else %}bg-info{% endif %}">
+                                {{ promo.get_decision_display }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+                <!-- Si aucun historique -->
+                {% if not notes_par_annee %}
+                <div class="text-center py-5">
+                    <i class="bi bi-clock-history display-4 text-muted"></i>
+                    <p class="text-muted mt-2">Aucun historique disponible</p>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.nav-tabs .nav-link {
+    font-weight: 500;
+    border: none;
+    border-bottom: 3px solid transparent;
+}
+
+.nav-tabs .nav-link.active {
+    border-bottom: 3px solid #0d6efd;
+    font-weight: 600;
+}
+
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.badge {
+    font-weight: 500;
+}
+</style>
+{% endblock %}

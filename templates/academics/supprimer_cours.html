@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Supprimer Cours - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h4 class="mb-0">🗑️ Supprimer le cours</h4>
+        </div>
+        <div class="card-body">
+            <h5>Êtes-vous sûr de vouloir supprimer ce cours ?</h5>
+            
+            <div class="alert alert-warning mt-3">
+                <strong>{{ cours.intitule }}</strong><br>
+                <strong>Faculté:</strong> {{ cours.faculte.nom }}<br>
+                <strong>Niveau:</strong> {{ cours.get_niveau_display }}<br>
+                <strong>Professeur:</strong> {% if cours.professeur %}{{ cours.professeur.user.get_full_name }}{% else %}Non assigné{% endif %}
+            </div>
+
+            <p class="text-danger">
+                <strong>⚠️ Attention :</strong> Cette action est irréversible. 
+                Toutes les notes et inscriptions liées à ce cours seront supprimées.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'academics:liste_cours' %}" class="btn btn-secondary">
+                        ← Annuler
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        🗑️ Confirmer la suppression
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

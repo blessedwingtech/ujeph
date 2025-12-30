@@ -1,0 +1,822 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestion Complète des Relevés de Notes{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- En-tête avec statistiques -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-file-earmark-text me-2"></i>Gestion Complète des Relevés de Notes</h2>
+            <p class="text-muted mb-0">Administration, génération et consultation des relevés académiques</p>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-download me-1"></i>Exports rapides
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="exportParSemestre()">Par semestre</a></li>
+                <li><a class="dropdown-item" href="#" onclick="exportParFaculte()">Par faculté</a></li>
+                <li><a class="dropdown-item" href="#" onclick="exportParPromotion()">Par promotion</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="exportTousReleves()">Tous les relevés (ZIP)</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Cartes de statistiques -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-primary border-start-3 border-end-0 border-bottom-0 border-top-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Relevés générés
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.total_releves|default:"0" }}</div>
+                        </div>
+                        <div class="text-end">
+                            <i class="bi bi-file-earmark-text fs-1 text-primary opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-primary">{{ stats.releves_valides|default:"0" }} validés</span>
+                        <span class="badge bg-secondary ms-1">{{ stats.releves_brouillon|default:"0" }} brouillons</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-success border-start-3 border-end-0 border-bottom-0 border-top-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Étudiants couverts
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.etudiants_couverts|default:"0" }}</div>
+                        </div>
+                        <div class="text-end">
+                            <i class="bi bi-people fs-1 text-success opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            {{ stats.pourcentage_couverture|default:"0" }}% de la promotion active
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-info border-start-3 border-end-0 border-bottom-0 border-top-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Semestre actif
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.semestre_actif|default:"S1" }}</div>
+                        </div>
+                        <div class="text-end">
+                            <i class="bi bi-calendar-month fs-1 text-info opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            Année: {{ stats.annee_actuelle|default:"2024-2025" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-warning border-start-3 border-end-0 border-bottom-0 border-top-0 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Moyenne générale
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ stats.moyenne_generale|floatformat:2|default:"0.00" }}</div>
+                        </div>
+                        <div class="text-end">
+                            <i class="bi bi-graph-up fs-1 text-warning opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge {% if stats.taux_reussite >= 70 %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ stats.taux_reussite|default:"0" }}% de réussite
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section de génération -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-gear-wide-connected me-2"></i>Génération de Relevés</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <h6 class="text-success"><i class="bi bi-lightning me-1"></i>Génération rapide</h6>
+                                <p class="text-muted small">
+                                    Générez des relevés pour la période courante en un clic.
+                                </p>
+                                <a href="{% url 'grades:generer_releves' %}" class="btn btn-success w-100 mb-2">
+                                    <i class="bi bi-play-circle me-1"></i>Générer maintenant
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <h6 class="text-primary"><i class="bi bi-sliders me-1"></i>Génération avancée</h6>
+                                <p class="text-muted small">
+                                    Personnalisez les paramètres de génération.
+                                </p>
+                                <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#modalGenerationAvancee">
+                                    <i class="bi bi-gear me-1"></i>Options avancées
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-info-circle fs-4"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="alert-heading">À propos de la génération</h6>
+                                <ul class="mb-0 small">
+                                    <li>Seules les notes <strong>validées</strong> sont incluses</li>
+                                    <li>Les moyennes sont calculées automatiquement selon les coefficients</li>
+                                    <li>Un historique est conservé pour chaque génération</li>
+                                    <li>Les relevés existants peuvent être mis à jour ou régénérés</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-search me-2"></i>Recherche & Filtrage</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="filtreForm">
+                        <div class="mb-3">
+                            <label class="form-label">Recherche par étudiant</label>
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="Nom, prénom ou matricule..."
+                                       value="{{ request.GET.search|default:'' }}">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Filtrer par statut</label>
+                                <select name="statut" class="form-select">
+                                    <option value="">Tous les statuts</option>
+                                    <option value="BROUILLON" {% if request.GET.statut == 'BROUILLON' %}selected{% endif %}>Brouillon</option>
+                                    <option value="VALIDE" {% if request.GET.statut == 'VALIDE' %}selected{% endif %}>Validé</option>
+                                    <option value="SIGNE" {% if request.GET.statut == 'SIGNE' %}selected{% endif %}>Signé</option>
+                                    <option value="ARCHIVE" {% if request.GET.statut == 'ARCHIVE' %}selected{% endif %}>Archivé</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Année académique</label>
+                                <select name="annee" class="form-select">
+                                    <option value="">Toutes années</option>
+                                    {% for annee in annees_disponibles %}
+                                    <option value="{{ annee }}" {% if request.GET.annee == annee %}selected{% endif %}>
+                                        {{ annee }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Semestre</label>
+                                <select name="semestre" class="form-select">
+                                    <option value="">Tous semestres</option>
+                                    <option value="S1" {% if request.GET.semestre == 'S1' %}selected{% endif %}>S1</option>
+                                    <option value="S2" {% if request.GET.semestre == 'S2' %}selected{% endif %}>S2</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Faculté</label>
+                                <select name="faculte" class="form-select">
+                                    <option value="">Toutes facultés</option>
+                                    {% for faculte in facultes %}
+                                    <option value="{{ faculte.id }}" {% if request.GET.faculte == faculte.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ faculte.nom }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Niveau</label>
+                                <select name="niveau" class="form-select">
+                                    <option value="">Tous niveaux</option>
+                                    {% for key, value in niveaux %}
+                                    <option value="{{ key }}" {% if request.GET.niveau == key %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Moyenne minimale</label>
+                            <input type="range" class="form-range" id="rangeMoyenne" min="0" max="100" value="{{ request.GET.moyenne_min|default:'0' }}">
+                            <div class="d-flex justify-content-between">
+                                <small>0</small>
+                                <small id="moyenneValue">50</small>
+                                <small>100</small>
+                            </div>
+                            <input type="hidden" name="moyenne_min" id="moyenneMin">
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-filter me-1"></i>Appliquer les filtres
+                            </button>
+                            <a href="{% url 'grades:gestion_releves_complete' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Réinitialiser
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau principal des relevés -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 fw-bold text-primary">
+                <i class="bi bi-list-ul me-1"></i>Liste des relevés
+                <span class="badge bg-primary ms-2">{{ releves.paginator.count|default:0 }}</span>
+            </h6>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header">Actions groupées</h6></li>
+                    <li><a class="dropdown-item" href="#" onclick="validerSelection()"><i class="bi bi-check-circle me-2"></i>Valider la sélection</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="exporterSelection()"><i class="bi bi-download me-2"></i>Exporter la sélection</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="imprimerSelection()"><i class="bi bi-printer me-2"></i>Imprimer la sélection</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="archiverSelection()"><i class="bi bi-archive me-2"></i>Archiver la sélection</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th width="30">
+                                <input type="checkbox" id="selectAllCheckbox" class="form-check-input">
+                            </th>
+                            <th>Étudiant</th>
+                            <th>Matricule</th>
+                            <th>Période</th>
+                            <th>Niveau</th>
+                            <th>Faculté</th>
+                            <th>Moyenne</th>
+                            <th>Rang</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for releve in releves %}
+                        <tr class="{% if releve.statut == 'BROUILLON' %}table-warning{% elif releve.statut == 'ARCHIVE' %}table-secondary{% endif %}">
+                            <td>
+                                <input type="checkbox" class="form-check-input releve-checkbox" value="{{ releve.id }}">
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        {% if releve.etudiant.photo %}
+                                        <img src="{{ releve.etudiant.photo.url }}" alt="{{ releve.etudiant.user.get_full_name }}" 
+                                             class="rounded-circle" width="32" height="32">
+                                        {% else %}
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                                             style="width: 32px; height: 32px;">
+                                            {{ releve.etudiant.user.first_name|first|upper }}{{ releve.etudiant.user.last_name|first|upper }}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <strong>{{ releve.etudiant.user.get_full_name }}</strong> 
+                                        <div class="text-muted small">{{ releve.etudiant.faculte.nom|default:"" }}</div>                                        
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <code>{{ releve.etudiant.matricule }}</code>
+                            </td>
+                            <td>
+                                <span class="badge {% if releve.semestre == 'S1' %}bg-info{% else %}bg-warning{% endif %}">
+                                    {{ releve.annee_academique }} {{ releve.semestre }}
+                                </span>
+                                <div class="small text-muted">{{ releve.date_generation|date:"d/m/Y" }}</div>
+                            </td>
+                            <td>
+                                {{ releve.etudiant.get_niveau_display|default:"N/A" }}
+                            </td>
+                            <td>
+                                {{ releve.etudiant.faculte.nom|default:"N/A" }}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                        <div class="progress-bar {% if releve.moyenne_semestre >= 70 %}bg-success{% elif releve.moyenne_semestre >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ releve.moyenne_semestre }}%">
+                                        </div>
+                                    </div>
+                                    <span class="fw-bold {% if releve.moyenne_semestre >= 70 %}text-success{% elif releve.moyenne_semestre >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                                        {{ releve.moyenne_semestre|floatformat:1 }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if releve.rang %}
+                                <span class="badge bg-dark">{{ releve.rang }}/{{ releve.total_etudiants }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if releve.statut == 'VALIDE' %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Validé</span>
+                                {% elif releve.statut == 'BROUILLON' %}
+                                <span class="badge bg-warning"><i class="bi bi-pencil me-1"></i>Brouillon</span>
+                                {% elif releve.statut == 'SIGNE' %}
+                                <span class="badge bg-primary"><i class="bi bi-pen me-1"></i>Signé</span>
+                                {% elif releve.statut == 'ARCHIVE' %}
+                                <span class="badge bg-secondary"><i class="bi bi-archive me-1"></i>Archivé</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'grades:detail_releve' releve.id %}" 
+                                       class="btn btn-outline-primary" 
+                                       data-bs-toggle="tooltip" 
+                                       title="Voir le détail">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'grades:exporter_releve_pdf' releve.id %}" 
+                                       class="btn btn-outline-success" 
+                                       data-bs-toggle="tooltip" 
+                                       title="Télécharger PDF">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-outline-info dropdown-toggle dropdown-toggle-split" 
+                                            data-bs-toggle="dropdown">
+                                        <span class="visually-hidden">Plus d'options</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'grades:modifier_releve' releve.id %}">
+                                                <i class="bi bi-pencil me-2"></i>Modifier
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'grades:exporter_releve_csv' releve.id %}">
+                                                <i class="bi bi-file-text me-2"></i>Exporter CSV
+                                            </a>
+                                        </li>
+                                        {% if releve.statut == 'BROUILLON' %}
+                                        <li>
+                                            <a class="dropdown-item text-success" href="#" onclick="validerReleve({{ releve.id }})">
+                                                <i class="bi bi-check-circle me-2"></i>Valider
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        {% if releve.statut == 'VALIDE' %}
+                                        <li>
+                                            <a class="dropdown-item text-primary" href="#" onclick="signerReleve({{ releve.id }})">
+                                                <i class="bi bi-pen me-2"></i>Signer
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#" onclick="supprimerReleve({{ releve.id }})">
+                                                <i class="bi bi-trash me-2"></i>Supprimer
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5">
+                                <div class="py-5">
+                                    <i class="bi bi-file-earmark-x display-1 text-muted"></i>
+                                    <h5 class="text-muted mt-3">Aucun relevé trouvé</h5>
+                                    <p class="text-muted">Utilisez les filtres ou générez des relevés pour commencer.</p>
+                                    <a href="{% url 'grades:generer_releves' %}" class="btn btn-success mt-2">
+                                        <i class="bi bi-plus-circle me-1"></i>Générer des relevés
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if releves.has_other_pages %}
+            <nav aria-label="Navigation des pages" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if releves.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ releves.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in releves.paginator.page_range %}
+                        {% if num >= releves.number|add:"-2" and num <= releves.number|add:"2" %}
+                        <li class="page-item {% if releves.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if releves.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ releves.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <div class="text-center text-muted small mt-2">
+                    Page {{ releves.number }} sur {{ releves.paginator.num_pages }}
+                    • {{ releves.paginator.count }} relevé(s) au total
+                </div>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Section d'actions rapides -->
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <div class="card border-start-danger border-start-3 h-100">
+                <div class="card-body">
+                    <h6 class="text-danger mb-3"><i class="bi bi-exclamation-triangle me-2"></i>Alertes importantes</h6>
+                    <ul class="list-group list-group-flush">
+                        {% if stats.releves_brouillon > 0 %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Relevés en brouillon
+                            <span class="badge bg-warning rounded-pill">{{ stats.releves_brouillon }}</span>
+                        </li>
+                        {% endif %}
+                        {% if stats.etudiants_sans_releves > 0 %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Étudiants sans relevés
+                            <span class="badge bg-danger rounded-pill">{{ stats.etudiants_sans_releves }}</span>
+                        </li>
+                        {% endif %}
+                        {% if stats.releves_non_signes > 0 %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Relevés à signer
+                            <span class="badge bg-info rounded-pill">{{ stats.releves_non_signes }}</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3"><i class="bi bi-speedometer2 me-2"></i>Actions rapides</h6>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="{% url 'grades:mes_releves' %}" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-person me-1"></i>Vue étudiant
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-success w-100" onclick="showRapportMoyennes()">
+                                <i class="bi bi-graph-up me-1"></i>Statistiques
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-warning w-100" onclick="showComparaisonSemestres()">
+                                <i class="bi bi-arrow-left-right me-1"></i>Comparer
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-danger w-100" onclick="showEtudiantsEchec()">
+                                <i class="bi bi-exclamation-octagon me-1"></i>Échecs
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-info w-100" onclick="showMeilleursEtudiants()">
+                                <i class="bi bi-trophy me-1"></i>Classement
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-secondary w-100" onclick="showArchiveTools()">
+                                <i class="bi bi-archive me-1"></i>Archivage
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-dark w-100" onclick="showParametres()">
+                                <i class="bi bi-gear me-1"></i>Paramètres
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-primary w-100" onclick="showAide()">
+                                <i class="bi bi-question-circle me-1"></i>Aide
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Génération avancée -->
+<div class="modal fade" id="modalGenerationAvancee" tabindex="-1" aria-labelledby="modalGenerationAvanceeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalGenerationAvanceeLabel">
+                    <i class="bi bi-gear me-2"></i>Génération avancée de relevés
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formGenerationAvancee" method="post" action="{% url 'grades:generer_releves' %}">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="avanceSemestre" class="form-label">Semestre</label>
+                            <select class="form-select" id="avanceSemestre" name="semestre" required>
+                                <option value="S1">Semestre 1 (S1)</option>
+                                <option value="S2">Semestre 2 (S2)</option>
+                                <option value="ANNEE">Année complète</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="avanceAnnee" class="form-label">Année académique</label>
+                            <input type="text" class="form-control" id="avanceAnnee" name="annee" 
+                                   placeholder="Ex: 2024-2025" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="avanceFaculte" class="form-label">Faculté</label>
+                            <select class="form-select" id="avanceFaculte" name="faculte">
+                                <option value="">Toutes les facultés</option>
+                                {% for faculte in facultes %}
+                                <option value="{{ faculte.id }}">{{ faculte.nom }}</option>
+                                {% endfor %}
+                            </select>
+                        </div> 
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="avanceMettreAJour" name="mettre_a_jour">
+                                <label class="form-check-label" for="avanceMettreAJour">
+                                    Mettre à jour les relevés existants
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="avanceForcer" name="forcer">
+                                <label class="form-check-label" for="avanceForcer">
+                                    Forcer la génération même si incomplet
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="avanceNotification" name="notification" checked>
+                                <label class="form-check-label" for="avanceNotification">
+                                    Envoyer une notification par email
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" form="formGenerationAvancee" class="btn btn-primary">
+                    <i class="bi bi-play-circle me-1"></i>Lancer la génération
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts JavaScript -->
+<script>
+// Initialisation des tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Gestion du range pour la moyenne
+    const rangeMoyenne = document.getElementById('rangeMoyenne');
+    const moyenneValue = document.getElementById('moyenneValue');
+    const moyenneMin = document.getElementById('moyenneMin');
+    
+    if (rangeMoyenne) {
+        rangeMoyenne.addEventListener('input', function() {
+            moyenneValue.textContent = this.value;
+            moyenneMin.value = this.value;
+        });
+    }
+    
+    // Gestion de la sélection multiple
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.releve-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+});
+
+// Fonction pour valider un relevé
+function validerReleve(releveId) {
+    if (confirm('Voulez-vous vraiment valider ce relevé ? Cette action est définitive.')) {
+        fetch(`/grades/api/valider-releve/${releveId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erreur lors de la validation: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Une erreur est survenue');
+        });
+    }
+}
+
+// Fonction pour exporter tous les relevés
+function exportTousReleves() {
+    Swal.fire({
+        title: 'Exporter tous les relevés',
+        text: 'Cette action générera un fichier ZIP contenant tous les relevés. Cela peut prendre quelques minutes.',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Générer l\'export',
+        cancelButtonText: 'Annuler',
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return fetch('/grades/export-all-releves/')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(response.statusText);
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'releves_complets.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(`Erreur: ${error}`);
+                });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    });
+}
+
+// Fonction pour afficher les statistiques
+function showRapportMoyennes() {
+    Swal.fire({
+        title: 'Rapport des moyennes',
+        html: `
+            <div class="text-start">
+                <p><strong>Moyenne générale:</strong> {{ stats.moyenne_generale|floatformat:2 }}</p>
+                <p><strong>Taux de réussite:</strong> {{ stats.taux_reussite|default:"0" }}%</p>
+                <p><strong>Moyenne maximale:</strong> {{ stats.moyenne_max|floatformat:2|default:"0.00" }}</p>
+                <p><strong>Moyenne minimale:</strong> {{ stats.moyenne_min|floatformat:2|default:"0.00" }}</p>
+                <hr>
+                <p class="text-muted small">Basé sur {{ stats.total_releves|default:"0" }} relevés analysés</p>
+            </div>
+        `,
+        icon: 'info',
+        confirmButtonText: 'OK'
+    });
+}
+
+// Fonction pour obtenir le token CSRF
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+// Fonction pour afficher les étudiants en échec
+function showEtudiantsEchec() {
+    window.location.href = '{% url "grades:gestion_releves_complete" %}?moyenne_min=0&moyenne_max=49.9&statut=VALIDE';
+}
+
+// Fonction pour valider la sélection
+function validerSelection() {
+    const selected = Array.from(document.querySelectorAll('.releve-checkbox:checked'))
+        .map(cb => cb.value);
+    
+    if (selected.length === 0) {
+        Swal.fire('Aucune sélection', 'Veuillez sélectionner au moins un relevé', 'warning');
+        return;
+    }
+    
+    Swal.fire({
+        title: `Valider ${selected.length} relevé(s)`,
+        text: 'Cette action validera définitivement les relevés sélectionnés.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Valider',
+        cancelButtonText: 'Annuler'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Implémenter la validation multiple ici
+            console.log('Validation des relevés:', selected);
+            Swal.fire('Succès', `${selected.length} relevé(s) validé(s)`, 'success')
+                .then(() => location.reload());
+        }
+    });
+}
+</script>
+
+<style>
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    cursor: pointer;
+}
+.card-header {
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+.border-start-3 {
+    border-left-width: 3px !important;
+}
+.progress {
+    background-color: #e9ecef;
+}
+.badge {
+    font-weight: 500;
+}
+.dropdown-menu {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+</style>
+{% endblock %}

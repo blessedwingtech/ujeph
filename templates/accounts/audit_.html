@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Audit du système{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Titre et statistiques -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-2"><i class="bi bi-clipboard-data text-primary me-2"></i>Journal d'audit du système</h1>
+            <p class="text-muted">Suivi de toutes les actions critiques effectuées dans le système</p>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="text-center">
+                <div class="fs-4 fw-bold text-primary">{{ total_actions }}</div>
+                <div class="text-muted small">Actions totales</div>
+            </div>
+            <div class="text-center">
+                <div class="fs-4 fw-bold text-success">{{ actions_today }}</div>
+                <div class="text-muted small">Aujourd'hui</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtres de recherche</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Utilisateur</label>
+                    <select name="user" class="form-select form-select-sm">
+                        <option value="">Tous les utilisateurs</option>
+                        {% for user in users_list %}
+                            <option value="{{ user }}" {% if filters.user == user %}selected{% endif %}>{{ user }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Type d'action</label>
+                    <select name="action" class="form-select form-select-sm">
+                        <option value="">Toutes les actions</option>
+                        {% for code, label in actions_choices %}
+                            <option value="{{ code }}" {% if filters.action == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Objet</label>
+                    <input type="text" name="objet" class="form-control form-control-sm" 
+                           placeholder="Rechercher un objet..." value="{{ filters.objet }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Faculté</label>
+                    <select name="faculte" class="form-select form-select-sm">
+                        <option value="">Toutes les facultés</option>
+                        {% for fac in facultes_list %}
+                            <option value="{{ fac }}" {% if filters.faculte == fac %}selected{% endif %}>{{ fac }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Période rapide</label>
+                    <select name="periode" class="form-select form-select-sm">
+                        <option value="">Toute période</option>
+                        <option value="today" {% if filters.periode == 'today' %}selected{% endif %}>Aujourd'hui</option>
+                        <option value="yesterday" {% if filters.periode == 'yesterday' %}selected{% endif %}>Hier</option>
+                        <option value="week" {% if filters.periode == 'week' %}selected{% endif %}>7 derniers jours</option>
+                        <option value="month" {% if filters.periode == 'month' %}selected{% endif %}>30 derniers jours</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Date début</label>
+                    <input type="date" name="date_debut" class="form-control form-control-sm" 
+                           value="{{ filters.date_debut }}">
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Date fin</label>
+                    <input type="date" name="date_fin" class="form-control form-control-sm" 
+                           value="{{ filters.date_fin }}">
+                </div>
+                
+                <div class="col-12">
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'accounts:audit' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x-circle me-1"></i> Réinitialiser
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-search me-1"></i> Appliquer les filtres
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tableau des actions -->
+    <div class="card">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Actions enregistrées</h5>
+            <span class="badge bg-primary">{{ page_obj.paginator.count }} actions</span>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="150">Date/Heure</th>
+                            <th width="120">Utilisateur</th>
+                            <th width="180">Type d'action</th>
+                            <th>Objet</th>
+                            <th width="150">Faculté</th>
+                            <th width="80" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for audit in page_obj %}
+                        <tr>
+                            <td>
+                                <div class="small text-muted">{{ audit.date|date:"d/m/Y" }}</div>
+                                <div class="small">{{ audit.date|date:"H:i:s" }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ audit.user }}</span>
+                            </td>
+                            <td>
+                                {% if audit.action == 'USER_LOGIN' %}
+                                    <span class="badge bg-success"><i class="bi bi-box-arrow-in-right me-1"></i>Connexion</span>
+                                {% elif audit.action == 'USER_LOGOUT' %}
+                                    <span class="badge bg-warning"><i class="bi bi-box-arrow-left me-1"></i>Déconnexion</span>
+                                {% elif audit.action == 'LOGIN_FAILED' %}
+                                    <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>Échec connexion</span>
+                                {% elif 'CREATE' in audit.action %}
+                                    <span class="badge bg-info"><i class="bi bi-plus-circle me-1"></i>Création</span>
+                                {% elif 'UPDATE' in audit.action %}
+                                    <span class="badge bg-primary"><i class="bi bi-pencil me-1"></i>Modification</span>
+                                {% elif 'DELETE' in audit.action %}
+                                    <span class="badge bg-danger"><i class="bi bi-trash me-1"></i>Suppression</span>
+                                {% elif 'PUBLISH' in audit.action %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Publication</span>
+                                {% elif 'REJECT' in audit.action %}
+                                    <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejet</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ audit.get_action_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-medium">{{ audit.objet }}</div>
+                                <div class="small text-muted">{{ audit.details|truncatechars:100 }}</div>
+                            </td>
+                            <td>
+                                {% if audit.faculte %}
+                                    <span class="badge bg-light text-dark">{{ audit.faculte }}</span>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        data-bs-toggle="modal" data-bs-target="#detailsModal{{ audit.id }}">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        
+                        <!-- Modal pour voir les détails -->
+                        <div class="modal fade" id="detailsModal{{ audit.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Détails de l'action</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <h6>Informations de base</h6>
+                                                <table class="table table-sm">
+                                                    <tr>
+                                                        <th width="140">Utilisateur:</th>
+                                                        <td>{{ audit.user }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Type d'action:</th>
+                                                        <td>{{ audit.get_action_display }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Date/Heure:</th>
+                                                        <td>{{ audit.date|date:"d/m/Y H:i:s" }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Objet:</th>
+                                                        <td>{{ audit.objet }}</td>
+                                                    </tr>
+                                                    {% if audit.faculte %}
+                                                    <tr>
+                                                        <th>Faculté:</th>
+                                                        <td>{{ audit.faculte }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    {% if audit.cours %}
+                                                    <tr>
+                                                        <th>Cours:</th>
+                                                        <td>{{ audit.cours }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                </table>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Statut</h6>
+                                                <div class="alert alert-light">
+                                                    {% if audit.action == 'USER_LOGIN' %}
+                                                        <span class="badge bg-success">Connexion réussie</span>
+                                                    {% elif audit.action == 'LOGIN_FAILED' %}
+                                                        <span class="badge bg-danger">Échec de connexion</span>
+                                                    {% elif audit.action == 'USER_LOGOUT' %}
+                                                        <span class="badge bg-warning">Déconnexion</span>
+                                                    {% elif 'PUBLISH' in audit.action %}
+                                                        <span class="badge bg-success">Action terminée</span>
+                                                    {% elif 'REJECT' in audit.action %}
+                                                        <span class="badge bg-danger">Action rejetée</span>
+                                                    {% else %}
+                                                        <span class="badge bg-info">Action enregistrée</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <h6>Détails complets</h6>
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">{{ audit.details }}</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                                    Aucune action d'audit trouvée
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="card-footer">
+            <nav aria-label="Navigation des pages">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+                <div class="text-center small text-muted mt-2">
+                    Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }} 
+                    • {{ page_obj.paginator.count }} actions au total
+                </div>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Actions supplémentaires -->
+    <div class="mt-4">
+        <div class="d-flex justify-content-between">
+            <div>
+                <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i> Imprimer le rapport
+                </button>
+            </div>
+            <div class="text-muted small">
+                <i class="bi bi-info-circle me-1"></i>
+                Les actions sont conservées pendant 1 an
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table th {
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge {
+        font-size: 0.75em;
+    }
+    
+    .modal pre {
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    @media print {
+        .navbar, .btn, .modal, footer {
+            display: none !important;
+        }
+        
+        .table {
+            font-size: 0.9rem;
+        }
+        
+        .card {
+            border: 1px solid #ddd !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
+{% endblock %}

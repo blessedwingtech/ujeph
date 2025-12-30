@@ -1,0 +1,655 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ action }} une Annonce - SG-UJEPH{% endblock %}
+
+{% block extra_head %}
+<style>
+    .form-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .section-title {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .preview-card {
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 20px;
+        background: #f8f9fa;
+        min-height: 200px;
+    }
+    
+    .destinataires-container {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+    }
+    
+    .form-check-label {
+        font-weight: 500;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .btn-toggle-group .btn {
+        border-radius: 20px;
+        margin: 0 5px 5px 0;
+    }
+    
+    .btn-toggle-group .btn.active {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .file-upload {
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .file-upload:hover {
+        border-color: var(--primary-color);
+        background-color: rgba(0, 51, 102, 0.05);
+    }
+    
+    .file-upload i {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+    
+    .file-name {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: var(--primary-color);
+        display: none;
+    }
+    
+    .date-inputs .form-group {
+        margin-bottom: 0;
+    }
+    
+    .btn-toolbar {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 30px;
+    }
+    
+    /* Empêcher le background sombre de rester après fermeture du modal */
+    .modal-backdrop {
+        z-index: 1040;
+    }
+    
+    .modal {
+        z-index: 1050;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-2">
+                <i class="fas fa-bullhorn text-primary me-2"></i>
+                {{ action }} une Annonce
+            </h1>
+            <p class="text-muted mb-0">
+                {% if action == 'Créer' %}
+                Rédigez une nouvelle annonce pour informer la communauté
+                {% else %}
+                Modifiez les détails de l'annonce existante
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'academics:liste_annonces' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulaire -->
+        <div class="col-lg-8 mb-4">
+            <div class="form-card">
+                <form method="POST" enctype="multipart/form-data" id="annonceForm">
+                    {% csrf_token %}
+                    
+                    <!-- Afficher les erreurs globales -->
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        <p class="mb-0">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Section 1: Informations de base -->
+                    <h3 class="section-title">
+                        <i class="fas fa-info-circle me-2"></i>Informations de base
+                    </h3>
+                    
+                    <!-- Titre -->
+                    <div class="form-group mb-4">
+                        <label for="{{ form.titre.id_for_label }}" class="form-label fw-bold">{{ form.titre.label }}</label>
+                        {{ form.titre }}
+                        {% if form.titre.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.titre.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Contenu -->
+                    <div class="form-group mb-4">
+                        <label for="{{ form.contenu.id_for_label }}" class="form-label fw-bold">{{ form.contenu.label }}</label>
+                        {{ form.contenu }}
+                        <div class="help-text mt-2">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Utilisez un langage clair et concis.
+                        </div>
+                        {% if form.contenu.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.contenu.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Section 2: Type et importance -->
+                    <h3 class="section-title">
+                        <i class="fas fa-tag me-2"></i>Type et importance
+                    </h3>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.type_annonce.id_for_label }}" class="form-label fw-bold">{{ form.type_annonce.label }}</label>
+                                {{ form.type_annonce }}
+                                {% if form.type_annonce.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.type_annonce.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.priorite.id_for_label }}" class="form-label fw-bold">{{ form.priorite.label }}</label>
+                                {{ form.priorite }}
+                                {% if form.priorite.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.priorite.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                {{ form.est_important }}
+                                <label class="form-check-label fw-medium" for="{{ form.est_important.id_for_label }}">
+                                    Marquer comme importante
+                                </label>
+                            </div>
+                            <div class="help-text mt-1">
+                                <i class="fas fa-star me-1"></i>
+                                Les annonces importantes apparaissent en premier.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                {{ form.est_publie }}
+                                <label class="form-check-label fw-medium" for="{{ form.est_publie.id_for_label }}">
+                                    Publier immédiatement
+                                </label>
+                            </div>
+                            <div class="help-text mt-1">
+                                <i class="fas fa-eye me-1"></i>
+                                Décochez pour sauvegarder en tant que brouillon.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Section 3: Destinataires -->
+                    <h3 class="section-title">
+                        <i class="fas fa-users me-2"></i>Destinataires
+                    </h3>
+                    
+                    <div class="destinataires-container mb-4">
+                        <div class="form-check mb-3">
+                            {{ form.destinataire_tous }}
+                            <label class="form-check-label fw-medium" for="{{ form.destinataire_tous.id_for_label }}">
+                                Pour tout le monde
+                            </label>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.destinataire_etudiants }}
+                                    <label class="form-check-label fw-medium" for="{{ form.destinataire_etudiants.id_for_label }}">
+                                        Étudiants
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.destinataire_professeurs }}
+                                    <label class="form-check-label fw-medium" for="{{ form.destinataire_professeurs.id_for_label }}">
+                                        Professeurs
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    {{ form.destinataire_admins }}
+                                    <label class="form-check-label fw-medium" for="{{ form.destinataire_admins.id_for_label }}">
+                                        Administrateurs
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="help-text mt-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Si aucun destinataire n'est sélectionné, l'annonce sera pour tout le monde.
+                        </div>
+                    </div>
+                    
+                    <!-- Section 4: Faculté et dates -->
+                    <h3 class="section-title">
+                        <i class="fas fa-calendar-alt me-2"></i>Faculté et dates
+                    </h3>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.faculte.id_for_label }}" class="form-label fw-bold">{{ form.faculte.label }}</label>
+                                {{ form.faculte }}
+                                <div class="help-text mt-2">
+                                    <i class="fas fa-university me-1"></i>
+                                    Optionnel : Sélectionnez une faculté spécifique.
+                                </div>
+                                {% if form.faculte.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.faculte.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="{{ form.date_expiration.id_for_label }}" class="form-label fw-bold">{{ form.date_expiration.label }}</label>
+                                {{ form.date_expiration }}
+                                <div class="help-text mt-2">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Optionnel : Date d'expiration automatique.
+                                </div>
+                                {% if form.date_expiration.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.date_expiration.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Section 5: Fichier joint -->
+                    <h3 class="section-title">
+                        <i class="fas fa-paperclip me-2"></i>Fichier joint
+                    </h3>
+                    
+                    <div class="mb-4">
+                        <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p class="mb-2">Cliquez pour télécharger un fichier</p>
+                            <small class="text-muted">PDF, Word, Excel, images (max. 5MB)</small>
+                            <div id="fileName" class="file-name"></div>
+                        </div>
+                        
+                        <!-- Champ fichier personnalisé -->
+                        <input type="file" 
+                               name="fichier_joint" 
+                               id="fileInput" 
+                               class="form-control d-none"
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt">
+                        
+                        {% if annonce and annonce.fichier_joint %}
+                        <div class="mt-3">
+                            <p class="mb-2">Fichier actuel :</p>
+                            <a href="{{ annonce.fichier_joint.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download me-2"></i>{{ annonce.fichier_joint.name|cut:"annonces/fichiers/" }}
+                            </a>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="clear_fichier_joint" id="clear_fichier_joint">
+                                <label class="form-check-label" for="clear_fichier_joint">
+                                    Supprimer le fichier actuel
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if form.fichier_joint.errors %}
+                        <div class="invalid-feedback d-block mt-2">
+                            {{ form.fichier_joint.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Boutons d'action - VERSION SIMPLIFIÉE -->
+                    <div class="btn-toolbar">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <button type="submit" name="action" value="save_draft" class="btn btn-outline-secondary">
+                                    <i class="fas fa-save me-2"></i>Sauvegarder en brouillon
+                                </button>
+                            </div>
+                            <div>
+                                <button type="submit" name="action" value="publish" class="btn btn-success">
+                                    <i class="fas fa-paper-plane me-2"></i>Publier l'annonce
+                                </button>
+                                <button type="button" id="previewBtn" class="btn btn-primary">
+                                    <i class="fas fa-eye me-2"></i>Prévisualiser
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Aperçu -->
+        <div class="col-lg-4">
+            <div class="form-card">
+                <h3 class="section-title">
+                    <i class="fas fa-eye me-2"></i>Aperçu
+                </h3>
+                
+                <div class="preview-card mb-4">
+                    <div id="previewContent">
+                        <p class="text-muted">L'aperçu apparaîtra ici...</p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Conseils</h6>
+                    <ul class="mb-0">
+                        <li>Soyez clair et concis dans votre message</li>
+                        <li>Vérifiez l'orthographe avant de publier</li>
+                        <li>Sélectionnez les bons destinataires</li>
+                        <li>Utilisez des dates d'expiration pour les annonces temporaires</li>
+                        <li>Joignez des fichiers si nécessaire (horaires, formulaires, etc.)</li>
+                    </ul>
+                </div>
+                
+                {% if annonce %}
+                <div class="mt-4">
+                    <h6><i class="fas fa-history me-2"></i>Historique</h6>
+                    <ul class="list-unstyled">
+                        <li>
+                            <small class="text-muted">Créée le :</small>
+                            <div>{{ annonce.date_publication|date:"d/m/Y à H:i" }}</div>
+                        </li>
+                        <li class="mt-2">
+                            <small class="text-muted">Dernière modification :</small>
+                            <div>{% now "d/m/Y à H:i" %}</div>
+                        </li>
+                        <li class="mt-2">
+                            <small class="text-muted">Auteur :</small>
+                            <div>{{ annonce.auteur.get_full_name|default:annonce.auteur.username }}</div>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de prévisualisation -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Prévisualisation de l'annonce
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalPreviewContent">
+                <!-- Contenu dynamique -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Fonction pour afficher le nom du fichier - DOIT ÊTRE GLOBALE
+function updateFileName(input) {
+    const fileNameDisplay = document.getElementById('fileName');
+    if (input.files.length > 0) {
+        fileNameDisplay.textContent = input.files[0].name;
+        fileNameDisplay.style.display = 'block';
+    } else {
+        fileNameDisplay.style.display = 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurer le champ fichier
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            updateFileName(this);
+        });
+    }
+    
+    // Gestion des destinataires
+    const tousCheckbox = document.getElementById('id_destinataire_tous');
+    const etudiantsCheckbox = document.getElementById('id_destinataire_etudiants');
+    const profsCheckbox = document.getElementById('id_destinataire_professeurs');
+    const adminsCheckbox = document.getElementById('id_destinataire_admins');
+    
+    function updateDestinataires() {
+        if (tousCheckbox && tousCheckbox.checked) {
+            if (etudiantsCheckbox) etudiantsCheckbox.disabled = true;
+            if (profsCheckbox) profsCheckbox.disabled = true;
+            if (adminsCheckbox) adminsCheckbox.disabled = true;
+            
+            if (etudiantsCheckbox) etudiantsCheckbox.checked = false;
+            if (profsCheckbox) profsCheckbox.checked = false;
+            if (adminsCheckbox) adminsCheckbox.checked = false;
+        } else {
+            if (etudiantsCheckbox) etudiantsCheckbox.disabled = false;
+            if (profsCheckbox) profsCheckbox.disabled = false;
+            if (adminsCheckbox) adminsCheckbox.disabled = false;
+        }
+    }
+    
+    if (tousCheckbox) {
+        tousCheckbox.addEventListener('change', updateDestinataires);
+        updateDestinataires(); // Initialiser
+    }
+    
+    // Bouton "Prévisualiser"
+    const previewBtn = document.getElementById('previewBtn');
+    if (previewBtn) {
+        previewBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Récupérer les valeurs du formulaire
+            const titre = document.getElementById('id_titre').value || 'Titre de l\'annonce';
+            const contenu = document.getElementById('id_contenu').value || 'Contenu de l\'annonce...';
+            const typeSelect = document.getElementById('id_type_annonce');
+            const type = typeSelect ? typeSelect.value : 'general';
+            const important = document.getElementById('id_est_important')?.checked || false;
+            
+            // Créer l'aperçu
+            const badgeClass = {
+                'general': 'bg-primary',
+                'urgence': 'bg-danger',
+                'cours': 'bg-success',
+                'examen': 'bg-warning text-dark',
+                'autre': 'bg-secondary'
+            }[type] || 'bg-primary';
+            
+            const typeLabel = {
+                'general': 'Générale',
+                'urgence': 'Urgence',
+                'cours': 'Cours',
+                'examen': 'Examen',
+                'autre': 'Autre'
+            }[type] || 'Générale';
+            
+            const previewHTML = `
+                <div class="annonce-preview">
+                    <div class="mb-3">
+                        <span class="badge ${badgeClass}">
+                            ${typeLabel}
+                        </span>
+                        ${important ? '<span class="badge bg-warning text-dark ms-2">Important</span>' : ''}
+                    </div>
+                    <h4 class="mb-3">${titre}</h4>
+                    <div class="annonce-content mb-4">
+                        ${contenu.replace(/\n/g, '<br>')}
+                    </div>
+                    <div class="annonce-meta text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Date de publication : {% now "d/m/Y à H:i" %}
+                    </div>
+                </div>
+            `;
+            
+            // Afficher dans le modal
+            document.getElementById('modalPreviewContent').innerHTML = previewHTML;
+            
+            // Afficher aussi dans l'aperçu latéral
+            document.getElementById('previewContent').innerHTML = previewHTML;
+            
+            // Ouvrir le modal
+            const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+            previewModal.show();
+            
+            // Gérer la fermeture propre du modal
+            const modalElement = document.getElementById('previewModal');
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                // S'assurer que le backdrop est bien supprimé
+                const backdrops = document.getElementsByClassName('modal-backdrop');
+                for (let backdrop of backdrops) {
+                    backdrop.remove();
+                }
+                // Réactiver le body
+                document.body.classList.remove('modal-open');
+                document.body.style = '';
+            });
+        });
+    }
+    
+    // Aperçu en temps réel dans le panneau latéral
+    function updateLivePreview() {
+        const titre = document.getElementById('id_titre')?.value || 'Titre de l\'annonce';
+        const contenu = document.getElementById('id_contenu')?.value || 'Le contenu apparaîtra ici...';
+        const typeSelect = document.getElementById('id_type_annonce');
+        const type = typeSelect ? typeSelect.value : 'general';
+        const important = document.getElementById('id_est_important')?.checked || false;
+        
+        const badgeClass = {
+            'general': 'bg-primary',
+            'urgence': 'bg-danger',
+            'cours': 'bg-success',
+            'examen': 'bg-warning text-dark',
+            'autre': 'bg-secondary'
+        }[type] || 'bg-primary';
+        
+        const typeLabel = {
+            'general': 'Générale',
+            'urgence': 'Urgence',
+            'cours': 'Cours',
+            'examen': 'Examen',
+            'autre': 'Autre'
+        }[type] || 'Générale';
+        
+        const previewHTML = `
+            <div class="annonce-preview">
+                <div class="mb-2">
+                    <span class="badge ${badgeClass}">
+                        ${typeLabel}
+                    </span>
+                    ${important ? '<span class="badge bg-warning text-dark ms-2">Important</span>' : ''}
+                </div>
+                <h5 class="mb-2">${titre}</h5>
+                <div class="annonce-content" style="font-size: 0.9rem;">
+                    ${contenu.length > 150 ? contenu.substring(0, 150) + '...' : contenu.replace(/\n/g, '<br>')}
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('previewContent').innerHTML = previewHTML;
+    }
+    
+    // Écouter les changements pour l'aperçu en temps réel
+    const titreField = document.getElementById('id_titre');
+    const contenuField = document.getElementById('id_contenu');
+    const typeField = document.getElementById('id_type_annonce');
+    const importantField = document.getElementById('id_est_important');
+    
+    if (titreField) titreField.addEventListener('input', updateLivePreview);
+    if (contenuField) contenuField.addEventListener('input', updateLivePreview);
+    if (typeField) typeField.addEventListener('change', updateLivePreview);
+    if (importantField) importantField.addEventListener('change', updateLivePreview);
+    
+    // Initialiser l'aperçu
+    updateLivePreview();
+    
+    // Empêcher la double soumission des formulaires
+    const form = document.getElementById('annonceForm');
+    if (form) {
+        let isSubmitting = false;
+        form.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+            isSubmitting = true;
+            
+            // Désactiver les boutons pour éviter les clics multiples
+            const submitButtons = form.querySelectorAll('button[type="submit"]');
+            submitButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Traitement en cours...';
+            });
+            
+            return true;
+        });
+    }
+});
+</script>
+{% endblock %}

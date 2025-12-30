@@ -1,0 +1,326 @@
+<!-- templates/accounts/creer_admin_systeme.html -->
+{% extends 'base.html' %}
+{% block title %}Créer un Administrateur - Super Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- En-tête -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-2">
+                    <i class="bi bi-shield-fill-plus text-danger"></i> Créer un Administrateur
+                </h3>
+                <p class="text-muted mb-0">
+                    Super Administrateur > Créer un nouvel administrateur système
+                </p>
+            </div>
+            <a href="{% url 'accounts:liste_admins_systeme' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Carte principale -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <!-- Information super admin -->
+                    <div class="alert alert-danger mb-4">
+                        <div class="d-flex">
+                            <i class="bi bi-shield-fill-check fs-4 me-3"></i>
+                            <div>
+                                <strong>Super Administrateur Système</strong>
+                                <p class="mb-0 small">
+                                    Vous créez un nouvel administrateur avec des permissions spécifiques.
+                                    Le mot de passe par défaut sera <strong>1234</strong>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire -->
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Informations de base -->
+                        <h5 class="mb-3 border-bottom pb-2">
+                            <i class="bi bi-person-badge"></i> Informations personnelles
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Nom d'utilisateur *</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.username.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Email *</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.email.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Prénom *</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.first_name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Nom *</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.last_name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Téléphone</label>
+                                {{ form.telephone }}
+                                {% if form.telephone.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.telephone.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Mot de passe</label>
+                                <input type="text" class="form-control" value="1234" readonly>
+                                <small class="text-muted">Mot de passe temporaire (à changer à la première connexion)</small>
+                            </div>
+                        </div>
+
+                        <!-- Niveau d'accès -->
+                        <h5 class="mb-3 border-bottom pb-2 mt-4">
+                            <i class="bi bi-shield-check"></i> Niveau d'accès et permissions
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-semibold">Niveau d'accès *</label>
+                                {{ form.niveau_acces }}
+                                <small class="form-text text-muted">
+                                    Détermine les permissions de base
+                                </small>
+                                {% if form.niveau_acces.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.niveau_acces.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <!-- Affichage dynamique -->
+                                <div id="niveauInfo" class="alert alert-info">
+                                    <strong id="niveauTitre">Sélectionnez un niveau</strong>
+                                    <p id="niveauDesc" class="mb-0 small">
+                                        Choisissez un niveau pour voir les détails
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Permissions détaillées -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Permissions spécifiques</label>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-check">
+                                        {{ form.peut_gerer_utilisateurs }}
+                                        <label class="form-check-label" for="{{ form.peut_gerer_utilisateurs.id_for_label }}">
+                                            👥 Gestion utilisateurs
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-check">
+                                        {{ form.peut_gerer_cours }}
+                                        <label class="form-check-label" for="{{ form.peut_gerer_cours.id_for_label }}">
+                                            📚 Gestion cours
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-check">
+                                        {{ form.peut_valider_notes }}
+                                        <label class="form-check-label" for="{{ form.peut_valider_notes.id_for_label }}">
+                                            📝 Validation notes
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-check">
+                                        {{ form.peut_gerer_facultes }}
+                                        <label class="form-check-label" for="{{ form.peut_gerer_facultes.id_for_label }}">
+                                            🏛️ Gestion facultés
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Boutons -->
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Annuler
+                            </a>
+                            <div>
+                                <button type="reset" class="btn btn-outline-warning me-2">
+                                    <i class="bi bi-arrow-clockwise"></i> Réinitialiser
+                                </button>
+                                <button type="submit" class="btn btn-danger px-4">
+                                    <i class="bi bi-check-circle"></i> Créer l'administrateur
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar informations -->
+        <div class="col-lg-4">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations importantes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-danger">Super Administrateur</h6>
+                        <p class="small mb-2">
+                            <i class="bi bi-shield-fill-check text-danger me-1"></i>
+                            Accès complet à toutes les fonctionnalités
+                        </p>
+                        <ul class="small text-muted mb-0 ps-3">
+                            <li>Gestion des administrateurs</li>
+                            <li>Gestion des utilisateurs</li>
+                            <li>Gestion académique complète</li>
+                            <li>Audit et logs système</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-warning">Administrateur Académique</h6>
+                        <p class="small mb-2">
+                            <i class="bi bi-book text-warning me-1"></i>
+                            Focus sur les aspects académiques
+                        </p>
+                        <ul class="small text-muted mb-0 ps-3">
+                            <li>Gestion des cours et programmes</li>
+                            <li>Validation des notes</li>
+                            <li>Gestion des facultés</li>
+                            <li class="text-decoration-line-through">Création d'utilisateurs</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-info">Gestionnaire Utilisateurs</h6>
+                        <p class="small mb-2">
+                            <i class="bi bi-people text-info me-1"></i>
+                            Gestion des comptes uniquement
+                        </p>
+                        <ul class="small text-muted mb-0 ps-3">
+                            <li>Création et gestion des comptes</li>
+                            <li>Réinitialisation des mots de passe</li>
+                            <li class="text-decoration-line-through">Gestion académique</li>
+                            <li class="text-decoration-line-through">Validation des notes</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <small>
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            <strong>Important :</strong> L'administrateur créé devra changer son mot de passe à sa première connexion.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript pour affichage dynamique -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const niveauSelect = document.querySelector('#id_niveau_acces');
+    
+    if (niveauSelect) {
+        const niveaux = {
+            'super': {
+                titre: 'Super Administrateur',
+                desc: 'Accès complet à toutes les fonctionnalités',
+                badge: '<span class="badge bg-danger">SUPER</span>'
+            },
+            'academique': {
+                titre: 'Administrateur Académique', 
+                desc: 'Gère les aspects académiques',
+                badge: '<span class="badge bg-warning">ACADÉMIQUE</span>'
+            },
+            'utilisateurs': {
+                titre: 'Gestionnaire Utilisateurs',
+                desc: 'Gère uniquement les comptes utilisateurs',
+                badge: '<span class="badge bg-info">UTILISATEURS</span>'
+            }
+        };
+        
+        function updateNiveauInfo() {
+            const niveau = niveauSelect.value;
+            const info = niveaux[niveau];
+            const infoDiv = document.getElementById('niveauInfo');
+            const titre = document.getElementById('niveauTitre');
+            const desc = document.getElementById('niveauDesc');
+            
+            if (info) {
+                titre.innerHTML = `${info.badge} ${info.titre}`;
+                desc.textContent = info.desc;
+            }
+        }
+        
+        niveauSelect.addEventListener('change', updateNiveauInfo);
+        updateNiveauInfo(); // Initialiser
+        
+        // Validation
+        niveauSelect.addEventListener('blur', function() {
+            if (!this.value) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

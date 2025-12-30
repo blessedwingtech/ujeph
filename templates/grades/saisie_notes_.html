@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Saisie des Notes - {{ cours.intitule }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3>📝 Saisie des Notes</h3>
+            <p class="text-muted mb-0">{{ cours.intitule }} — {{ cours.faculte.nom }}</p>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-primary">{{ etudiants|length }} étudiant{{ etudiants|length|pluralize }}</span>
+        </div>
+    </div>
+
+    <!-- {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %} -->
+
+    <!-- ✅ ALERTES INTELLIGENTES SELON L'ÉTAT -->
+    {% if toutes_notes_publiees %}
+    <div class="alert alert-success">
+        <strong>✅ Toutes les notes sont publiées !</strong> 
+        Les étudiants peuvent maintenant consulter leurs notes.
+    </div>
+    {% elif notes_soumises %}
+    <div class="alert alert-warning">
+        <strong>⏳ Notes en attente de validation</strong> 
+        Vous ne pouvez pas modifier les notes tant que l'admin ne les a pas validées.
+        <br><small class="text-muted">Statut: En attente de validation par l'administration</small>
+    </div>
+    {% elif notes_rejetees %}
+    <div class="alert alert-danger">
+        <strong>❌ Notes rejetées</strong> 
+        Certaines notes ont été rejetées par l'admin. Veuillez les corriger et les resoumettre.
+    </div>
+    {% elif notes_brouillon %}
+    <div class="alert alert-info">
+        <strong>💾 Brouillons enregistrés</strong> 
+        Vous avez des notes en brouillon. Vous pouvez les modifier ou les soumettre pour validation.
+    </div>
+    {% else %}
+    <div class="alert alert-secondary">
+        <strong>📝 Prêt à saisir</strong> 
+        Aucune note n'a été saisie pour ce cours. Commencez par remplir les notes des étudiants.
+    </div>
+    {% endif %}
+
+    <form method="post" novalidate id="notesForm">
+        {% csrf_token %}
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Notes des étudiants</h5>
+                <div>
+                    {% if notes_soumises %}
+                    <span class="badge bg-warning">En attente de validation</span>
+                    {% elif notes_publiees %}
+                    <span class="badge bg-success">Notes publiées</span>
+                    {% elif notes_rejetees %}
+                    <span class="badge bg-danger">Notes rejetées</span>
+                    {% elif notes_brouillon %}
+                    <span class="badge bg-info">Brouillons</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Non saisies</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card-body">
+                {% if etudiants %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Matricule</th>
+                                <th>Nom complet</th>
+                                <th>Note /100</th>
+                                <th>Statut</th>
+                                <th>Informations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for etudiant in etudiants %}
+                            {% with note=notes_dict|get_item:etudiant.id %}
+                            <tr>
+                                <td>{{ etudiant.matricule }}</td>
+                                <td>{{ etudiant.user.get_full_name }}</td>
+                                <td style="width: 150px;">
+                                    {% if note and note.est_modifiable and note.created_by == request.user and peut_modifier_brouillons %}
+                                        <input type="number"
+                                               name="note_{{ etudiant.id }}"
+                                               value="{{ note.valeur }}"
+                                               min="0" max="100" step="0.5"
+                                               class="form-control form-control-sm"
+                                               required>
+                                    {% else %}
+                                        <input type="number"
+                                               name="note_{{ etudiant.id }}"
+                                               value="{% if note %}{{ note.valeur }}{% endif %}"
+                                               min="0" max="100" step="0.5"
+                                               class="form-control form-control-sm bg-light"
+                                               {% if note or not peut_modifier_brouillons %}readonly{% endif %}
+                                               required>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if note %}
+                                        <span class="badge bg-{{ note.get_statut_display_color }}">
+                                            {{ note.get_statut_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Non saisie</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if note %}
+                                        {% if note.statut == 'rejetée' %}
+                                            <small class="text-danger" title="{{ note.motif_rejet }}">
+                                                <i class="bi bi-exclamation-triangle"></i> Rejetée: {{ note.motif_rejet|truncatechars:30 }}
+                                            </small>
+                                        {% elif note.statut == 'soumise' %}
+                                            <small class="text-muted">
+                                                Soumise le {{ note.date_soumission|date:"d/m/Y" }}
+                                            </small>
+                                        {% elif note.statut == 'publiée' %}
+                                            <small class="text-success">
+                                                <i class="bi bi-check-circle"></i> Publiée le {{ note.date_validation|date:"d/m/Y" }}
+                                            </small>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <div class="alert alert-info text-center m-3">
+                        Aucun étudiant inscrit à ce cours pour le moment.
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <div>
+                    <!-- ✅ INDICATEURS D'ÉTAT -->
+                    {% if notes_soumises %}
+                    <span class="text-warning">
+                        <i class="bi bi-hourglass-split"></i> En attente de validation admin
+                    </span>
+                    {% elif toutes_notes_publiees %}
+                    <span class="text-success">
+                        <i class="bi bi-check-circle"></i> Toutes les notes sont publiées
+                    </span>
+                    {% elif notes_rejetees %}
+                    <span class="text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Notes rejetées à corriger
+                    </span>
+                    {% endif %}
+                </div>
+                <div>
+                    <!-- ✅ BOUTONS AVEC RESTRICTIONS INTELLIGENTES -->
+                    <button type="submit" 
+                            name="action" 
+                            value="enregistrer" 
+                            class="btn btn-secondary me-2 {% if not peut_modifier_brouillons %}disabled{% endif %}"
+                            {% if not peut_modifier_brouillons %}disabled{% endif %}
+                            title="{% if not peut_modifier_brouillons %}Impossible de modifier - notes en attente de validation{% else %}Enregistrer en brouillon{% endif %}">
+                        {% if not peut_modifier_brouillons %}⏳{% else %}💾{% endif %}
+                        Enregistrer Brouillon
+                    </button>
+                    
+                    <button type="submit"
+                            name="action"
+                            value="soumettre"
+                            class="btn btn-warning me-2 {% if not peut_soumettre %}disabled{% endif %} submit-swal"
+                            {% if not peut_soumettre %}disabled{% endif %}
+                            data-swal-title="Soumettre les notes"
+                            data-swal-text="Soumettre ces notes pour validation ? Vous ne pourrez plus les modifier que si rejetées par l'admin."
+                            data-swal-icon="warning"
+                            title="{% if not peut_soumettre %}Impossible de soumettre - aucune note modifiable ou notes déjà soumises{% else %}Soumettre pour validation admin{% endif %}">
+                        {% if not peut_soumettre %}🔒{% else %}📤{% endif %}
+                        Soumettre pour Validation
+                    </button>
+                    
+                    <a href="{% url 'accounts:dashboard' %}" class="btn btn-outline-primary">
+                        ← Retour
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.submit-swal').forEach(button => {
+        button.addEventListener('click', async function(event) {
+            if (this.disabled) {
+                event.preventDefault();
+                return false;
+            }
+            
+            event.preventDefault();
+            
+            const result = await Swal.fire({
+                title: this.getAttribute('data-swal-title') || 'Confirmation',
+                text: this.getAttribute('data-swal-text') || 'Êtes-vous sûr ?',
+                icon: this.getAttribute('data-swal-icon') || 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Oui, continuer',
+                cancelButtonText: 'Annuler'
+            });
+            
+            if (result.isConfirmed) {
+                this.closest('form').submit();
+            }
+        });
+    });
+});
+</script>
+
+<script>
+// Validation côté client améliorée
+document.getElementById('notesForm').addEventListener('submit', function(e) {
+    let inputs = this.querySelectorAll('input[type="number"]:not([readonly])');
+    let hasErrors = false;
+    let emptyFields = 0;
+    
+    for (let input of inputs) {
+        if (input.value && input.value.trim() !== '') {
+            let value = parseFloat(input.value);
+            if (isNaN(value) || value < 0 || value > 100) {
+                alert('Les notes doivent être entre 0 et 100');
+                input.focus();
+                input.select();
+                hasErrors = true;
+                break;
+            }
+        } else {
+            emptyFields++;
+        }
+    }
+    
+    // Empêcher la soumission si tous les champs sont vides
+    if (emptyFields === inputs.length && !hasErrors) {
+        alert('Veuillez saisir au moins une note avant de soumettre.');
+        e.preventDefault();
+        return;
+    }
+    
+    if (hasErrors) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

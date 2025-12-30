@@ -1,0 +1,716 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Accueil - SG-UJEPH{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Styles supplémentaires pour la page d'accueil */
+    /* .hero-section {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+    } */
+    
+    .cta-buttons .btn {
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 600;
+        margin-right: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .features-section {
+        padding: 80px 0;
+        background-color: #f8fafc;
+    }
+    
+    .feature-box {
+        text-align: center;
+        padding: 30px 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .feature-box:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .announcements-section {
+        padding: 80px 0;
+    }
+    
+    .annonce-badge {
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+    
+    .badge-urgence { background-color: #ff6b6b; color: white; }
+    .badge-info { background-color: #4ecdc4; color: white; }
+    .badge-academique { background-color: #45b7d1; color: white; }
+    .badge-evenement { background-color: #96ceb4; color: white; }
+    
+    .faculties-section {
+        padding: 80px 0;
+        background: linear-gradient(to bottom, #f8fafc, #ffffff);
+    }
+    
+    .faculty-img {
+        height: 200px;
+        object-fit: cover;
+        border-radius: 15px 15px 0 0;
+    }
+    
+    .counter-section {
+        padding: 60px 0;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-blue) 100%);
+        color: white;
+        text-align: center;
+    }
+    
+    .counter-item {
+        padding: 20px;
+    }
+    
+    .counter-number {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+        color: white;
+    }
+    
+    .video-section {
+        padding: 80px 0;
+        background-color: white;
+    }
+    
+    .video-wrapper {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem !important;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem !important;
+        }
+        
+        .counter-number {
+            font-size: 2rem;
+        }
+    }
+/* scroll to top */
+    #goUpBtn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: none; /* caché par défaut */
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: opacity 0.3s ease;
+    }
+
+    #goUpBtn.show {
+    display: inline-block;
+    opacity: 1;
+    } 
+    
+    /* slide en arriere plan */
+    .hero-section {
+  position: relative;
+  min-height: 100vh; /* occupe toute la hauteur */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background-image 1s ease-in-out;
+}
+
+/* Optionnel : overlay sombre pour lisibilité du texte */
+.hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    rgba(1, 14, 48, 0.6), 
+    rgba(0,0,0,0.7)
+  );
+
+  z-index: 1;
+}
+
+.hero-section .container {
+  position: relative;
+  z-index: 2; /* garde ton contenu au-dessus du fond */
+}
+</style>
+
+ 
+{% endblock %}
+
+{% block content %}
+<!-- Section Héro -->
+<section class="hero-section" id="top">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="badge bg-accent-color text-white px-3 py-2 mb-5 d-flex justify-content-between align-items-center w-100"
+                    style="font-size: 1rem;">
+
+                    <span>
+                        <i class="fas fa-star me-2"></i> Université d'excellence
+                    </span> 
+                    {% if user.is_authenticated and user.role == 'admin' %}
+                    <a href="{% url 'accounts:creer_etudiant' %}" class="btn btn-light btn-sm">
+                        <i class="bi bi-person-plus"></i> Inscrire un Étudiant
+                    </a>
+                    {% endif %}
+                </div>
+            <div class="col-lg-6"> 
+                <h1 class="hero-title display-3 fw-bold mb-4">
+                    Bienvenue à l'<span class="text-warning">UJEPH</span>
+                </h1>
+                <p class="hero-subtitle lead mb-4">
+                    Université Jérusalem de Pignon Haïti. Nous formons les leaders de demain grâce à un enseignement 
+                    d'excellence, des valeurs chrétiennes et un engagement communautaire fort.
+                </p>
+                
+                <div class="cta-buttons mt-4">
+                    {% if not user.is_authenticated %}
+                        <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Portail étudiant
+                        </a>
+                        <a href="#facultes" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-search me-2"></i>Découvrir nos programmes
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:dashboard' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-tachometer-alt me-2"></i>Tableau de bord
+                        </a>
+                        {% if user.role == 'etudiant' %}
+                            <a href="{% url 'academics:mes_cours_etudiant' %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-book-reader me-2"></i>Mes cours
+                            </a>
+                        {% elif user.role == 'prof' %}
+                            <a href="{% url 'academics:mes_cours_professeur' %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>Mes cours
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="position-relative">
+                    <img hidden src="https://th.bing.com/th/id/OIP.x3Fe9wfuGdNg_gYXhkAhFwHaHa?w=175&h=180&c=7&r=0&o=7&cb=ucfimg2&dpr=1.3&pid=1.7&rm=3&ucfimg=1" 
+                         class="img-fluid rounded-3 shadow-lg" 
+                         alt="Campus UJEPH">
+                    <div class="position-relative bottom-0 start-0 bg-primary text-white p-4 rounded" style="max-width: 350px;">
+                        <h5 class="mb-2"><i class="fas fa-graduation-cap me-2"></i>Excellence académique</h5>
+                        <p class="mb-0 small">Formation de qualité depuis 2018</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section Statistiques -->
+<section class="counter-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center mb-5">
+                <h2 class="text-white mb-3">L'UJEPH en chiffres</h2>
+                <p class="text-white-75">Une communauté éducative dynamique et en croissance</p>
+            </div>
+        </div>
+        
+        <div class="row text-center">
+            <div class="col-md-4 col-6 mb-4">
+                <div class="counter-item">
+                    <div class="counter-number" data-target="{% if total_etudiants %}{{ total_etudiants }}{% else %}500{% endif %}">0</div>
+                    <h5>Étudiants</h5>
+                </div>
+            </div>
+            <div class="col-md-4 col-6 mb-4">
+                <div class="counter-item">
+                    <div class="counter-number" data-target="{% if total_professeurs %}{{ total_professeurs }}{% else %}20{% endif %}">0</div>
+                    <h5>Professeurs</h5>
+                </div>
+            </div>
+            <div class="col-md-4 col-6 mb-4">
+                <div class="counter-item">
+                    <div class="counter-number" data-target="{% if total_facultes %}{{ total_facultes }}{% else %}8{% endif %}">0</div>
+                    <h5>Facultés</h5>
+                </div>
+            </div>
+             
+        </div>
+    </div>
+</section>
+
+<!-- Section Facultés -->
+<section class="faculties-section" id="facultes">
+    <div class="container">
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-8 text-center">
+                <h2 class="section-title">Nos Facultés</h2>
+                <p class="text-muted">Découvrez nos différentes facultés et départements académiques</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            {% for faculte in facultes %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="faculty-card animate-card">
+                    <!-- Icône depuis la base de données -->
+                    <div class="faculty-icon">
+                        <i class="fas {{ faculte.icone|default:'fa-university' }}"></i>
+                    </div>
+                    <div class="card-body text-center p-4">
+                        <h4 class="card-title mb-3">{{ faculte.nom }}</h4>
+                        <p class="card-text text-muted mb-4">
+                            {% if faculte.description %}
+                                {{ faculte.description|truncatewords:20 }}
+                            {% else %}
+                                Formation d'excellence en {{ faculte.nom }}
+                            {% endif %}
+                        </p>
+                        <div class="mb-3">
+                            <span class="badge bg-primary me-2">
+                                <i class="fas fa-user-graduate me-1"></i>
+                                {{ faculte.get_etudiants_count }} étudiants
+                            </span>
+                            <span class="badge bg-success">
+                                <i class="fas fa-book me-1"></i>
+                                {{ faculte.get_cours_count }} cours
+                            </span>
+                        </div>
+                        <a hidden="{% url 'academics:liste_cours' %}?faculte={{ faculte.id }}" class="btn btn-outline-primary">
+                            Voir les cours <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                        <a href="#" 
+                        class="btn btn-outline-primary voir-cours-btn" 
+                        data-faculte-id="{{ faculte.id }}" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#coursModal">
+                            Voir les cours <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <!-- Message si aucune faculté -->
+            <div class="col-12 text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-university fa-4x text-muted"></i>
+                </div>
+                <h4 class="text-muted">Aucune faculté enregistrée</h4>
+                <p class="text-muted mb-4">
+                    L'administrateur peut ajouter des facultés via le panneau d'administration.
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if facultes|length >= 6 %}
+        <div class="text-center mt-4">
+            <a href="{% url 'academics:liste_facultes' %}" class="btn btn-primary btn-lg px-5">
+                <i class="fas fa-eye me-2"></i>Voir toutes les facultés ({{ total_facultes }})
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+
+<!-- Section Fonctionnalités -->
+<section class="features-section">
+    <div class="container">
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-8 text-center">
+                <h2 class="section-title">Pourquoi choisir l'UJEPH?</h2>
+                <p class="text-muted">Une expérience éducative complète et transformatrice</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="feature-box">
+                    <div class="feature-icon mx-auto">
+                        <i class="fas fa-graduation-cap text-primary"></i>
+                    </div>
+                    <h4 class="mb-3">Excellence académique</h4>
+                    <p class="text-muted">
+                        Programmes accrédités, enseignants qualifiés et méthodes pédagogiques innovantes.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="feature-box">
+                    <div class="feature-icon mx-auto">
+                        <i class="fas fa-hands-helping text-success"></i>
+                    </div>
+                    <h4 class="mb-3">Valeurs chrétiennes</h4>
+                    <p class="text-muted">
+                        Formation intégrale qui allie compétences professionnelles et valeurs éthiques.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="feature-box">
+                    <div class="feature-icon mx-auto">
+                        <i class="fas fa-users text-warning"></i>
+                    </div>
+                    <h4 class="mb-3">Engagement communautaire</h4>
+                    <p class="text-muted">
+                        Projets de service communautaire et implication dans le développement local.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Section Annonces -->
+<section class="announcements-section" id="annonces">
+    <div class="container">
+        <div class="row justify-content-between align-items-center mb-5">
+            <div class="col-lg-8">
+                <h2 class="section-title mb-0">Dernières Actualités</h2>
+                <p class="text-muted mt-2">Restez informé des dernières nouvelles et annonces</p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                {% if user.is_authenticated and user.role == 'admin' %}
+                <a href="{% url 'academics:creer_annonce' %}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>Nouvelle annonce
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row">
+            {% for annonce in annonces|slice:":6" %}
+            <div class="col-lg-6 mb-4">
+                <div class="annonce-card {% if annonce.type_annonce == 'urgence' %}urgent{% elif annonce.est_important %}important{% endif %}">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="annonce-badge badge-{{ annonce.type_annonce }}">
+                                <i class="fas fa-{{ annonce.get_icon }} me-1"></i>
+                                {{ annonce.get_type_annonce_display }}
+                            </span>
+                            <small class="text-muted">
+                                <i class="far fa-clock me-1"></i>
+                                {{ annonce.date_publication|timesince }}
+                            </small>
+                        </div>
+                        
+                        <h5 class="card-title mb-3">{{ annonce.titre }}</h5>
+                        
+                        <p class="card-text text-muted mb-4">
+                            {{ annonce.contenu|truncatewords:30 }}
+                        </p>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if annonce.destinataire_etudiants %}
+                                <span class="badge bg-primary me-1">Étudiants</span>
+                                {% endif %}
+                                {% if annonce.destinataire_professeurs %}
+                                <span class="badge bg-success me-1">Professeurs</span>
+                                {% endif %}
+                                {% if annonce.destinataire_admins %}
+                                <span class="badge bg-dark">Administrateurs</span>
+                                {% endif %}
+                                {% if annonce.destinataire_tous %}
+                                <span class="badge bg-secondary">Tous</span>
+                                {% endif %}
+                            </div>
+                            
+                            <a href="#"
+                            class="btn btn-sm btn-outline-primary lire-plus-btn"
+                            data-annonce-id="{{ annonce.id }}"
+                            data-bs-toggle="modal"
+                            data-bs-target="#annonceModal">
+                            Lire plus <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-newspaper fa-4x text-muted"></i>
+                </div>
+                <h4 class="text-muted">Aucune annonce pour le moment</h4>
+                <p class="text-muted">Revenez plus tard pour les dernières actualités.</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if annonces|length > 6 %}
+        <div class="text-center mt-4">
+            <a href="{% url 'academics:annonces_actives' %}" class="btn btn-outline-primary">
+                <i class="fas fa-list me-2"></i>Voir toutes les annonces
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Section Vidéo/Testimonials -->
+<section class="video-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <div class="video-wrapper">
+                    <div class="ratio ratio-16x9">
+                        <iframe width="1023" height="568" src="https://www.youtube.com/embed/K8UhfsVPq58" title="Kouri kouri vin inskri nan Ujpeh." frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <h2 class="section-title mb-4">Découvrez notre campus</h2>
+                <p class="text-muted mb-4">
+                    Visitez virtuellement notre campus moderne, nos laboratoires équipés et nos espaces d'apprentissage 
+                    innovants. L'UJEPH offre un environnement propice au développement académique et personnel.
+                </p>
+                
+                <div class="d-flex align-items-start mb-3">
+                    <div class="feature-icon me-3">
+                        <i class="fas fa-microscope text-primary"></i>
+                    </div>
+                    <div>
+                        <h5>Laboratoire informatique</h5>
+                        <p class="text-muted mb-0">Équipements informatiques pour pratiques avancées pour les étudiants.</p>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-start mb-3">
+                    <div class="feature-icon me-3">
+                        <i class="fas fa-book-open text-success"></i>
+                    </div>
+                    <div>
+                        <h5>Bibliothèque</h5>
+                        <p class="text-muted mb-0">Accès à de nombreuses ressources académiques.</p>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-start">
+                    <div class="feature-icon me-3">
+                        <i class="fas fa-wifi text-warning"></i>
+                    </div>
+                    <div>
+                        <h5>Campus connecté</h5>
+                        <p class="text-muted mb-0">Wi-Fi haute vitesse é la portée de tous.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Modal Bootstrap pour afficher les cours -->
+<div class="modal fade" id="coursModal" tabindex="-1" aria-labelledby="coursModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="coursModalLabel">Cours de la faculté</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Les cours seront injectés ici via AJAX -->
+        <div id="coursModalContent" class="row g-3">
+          <p class="text-center">Chargement...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Bootstrap pour afficher l'annonce complète -->
+<div class="modal fade" id="annonceModal" tabindex="-1" aria-labelledby="annonceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="annonceModalLabel">Annonce</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body" id="annonceModalContent">
+        <p class="text-center">Chargement...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bouton Go Up -->
+<a href="#top" id="goUpBtn" class="btn btn-primary btn-lg rounded-circle">
+  <i class="bi bi-arrow-up"></i>
+</a>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Animation des compteurs
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animation des compteurs
+        function animateCounters() {
+            const counters = document.querySelectorAll('.counter-number');
+            counters.forEach(counter => {
+                const target = parseInt(counter.getAttribute('data-target'));
+                let current = 0;
+                const increment = target / 100;
+                const speed = 30; // Plus lent pour un effet plus smooth
+                
+                const updateCounter = () => {
+                    if (current < target) {
+                        current += increment;
+                        counter.textContent = Math.ceil(current);
+                        setTimeout(updateCounter, speed);
+                    } else {
+                        counter.textContent = target;
+                    }
+                };
+                
+                updateCounter();
+            });
+        }
+        
+        // Observer pour déclencher l'animation des compteurs
+        const counterSection = document.querySelector('.counter-section');
+        if (counterSection) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        animateCounters();
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            observer.observe(counterSection);
+        }
+        
+        // Animation au scroll pour les cartes
+        const cards = document.querySelectorAll('.faculty-card, .feature-box, .annonce-card');
+        const cardObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        cards.forEach(card => {
+            cardObserver.observe(card);
+        });
+        
+        // Gestion des filtres d'annonces (si implémenté)
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    });
+</script>
+<!-- js pour charger le modal cours pour une facultes -->
+<script>
+$(document).ready(function() {
+    $('.voir-cours-btn').click(function() {
+        var faculteId = $(this).data('faculte-id');
+        $('#coursModalContent').html('<p class="text-center">Chargement...</p>');
+
+        $.ajax({
+            url: "{% url 'academics:cours_modal' %}",
+            data: { 'faculte_id': faculteId },
+            success: function(data) {
+                $('#coursModalContent').html(data.html);
+            },
+            error: function() {
+                $('#coursModalContent').html('<p class="text-center text-danger">Erreur lors du chargement.</p>');
+            }
+        });
+    });
+});
+</script>
+<!-- js pour afficher les detail annonces via ajax -->
+<script>
+$(document).ready(function() {
+    $('.lire-plus-btn').click(function() {
+        var annonceId = $(this).data('annonce-id');
+        $('#annonceModalContent').html('<p class="text-center">Chargement...</p>');
+
+        $.ajax({
+            url: "{% url 'academics:annonce_modal' %}",
+            data: { 'annonce_id': annonceId },
+            success: function(data) {
+                $('#annonceModalContent').html(data.html);
+            },
+            error: function() {
+                $('#annonceModalContent').html('<p class="text-center text-danger">Erreur lors du chargement de l\'annonce.</p>');
+            }
+        });
+    });
+});
+
+//go to up 
+
+// Sélection du bouton
+const goUpBtn = document.getElementById("goUpBtn");
+
+// Écoute du scroll
+window.addEventListener("scroll", () => {
+  if (window.scrollY > 200) { // seuil en pixels
+    goUpBtn.classList.add("show");
+  } else {
+    goUpBtn.classList.remove("show");
+  }
+});
+
+
+/* pour slide en arriere plan */
+document.addEventListener("DOMContentLoaded", function () {
+  const hero = document.querySelector(".hero-section");
+
+  const images = [
+    "{% static 'images/slide/campu.jpg' %}",
+    "{% static 'images/slide/campus.jpg' %}",
+    "{% static 'images/slide/etu.webp' %}",
+    "{% static 'images/slide/student.jpg' %}",
+    "{% static 'images/slide/coiffe.jpg' %}"
+  ];
+
+  let current = 0;
+
+  function changeBackground() {
+    hero.style.backgroundImage = `url(${images[current]})`;
+    current = (current + 1) % images.length;
+  }
+
+  // première image au chargement
+  changeBackground();
+
+  // change toutes les 5 secondes
+  setInterval(changeBackground, 5000);
+});
+</script>
+{% endblock %}

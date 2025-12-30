@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+{% block title %}Relevé de Notes - {{ releve.etudiant.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- En-tête du relevé -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0">
+                        <i class="bi bi-file-earmark-text"></i> 
+                        Relevé de Notes - {{ releve.etudiant.user.get_full_name }}
+                    </h4>
+                    <small class="opacity-75">Matricule : {{ releve.etudiant.matricule }}</small>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'grades:exporter_releve_csv' releve.id %}" class="btn btn-light btn-sm">
+                        <i class="bi bi-download"></i> Exporter CSV
+                    </a>
+                    <a href="{% url 'grades:mon_historique' %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-arrow-left"></i> Retour
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6>Informations Étudiant</h6>
+                    <table class="table table-sm">
+                        <tr><td><strong>Matricule :</strong></td><td>{{ releve.etudiant.matricule }}</td></tr>
+                        <tr><td><strong>Nom Complet :</strong></td><td>{{ releve.etudiant.user.get_full_name }}</td></tr>
+                        <tr><td><strong>Faculté :</strong></td><td>{{ releve.faculte.nom|default:"N/A" }}</td></tr>
+                        <tr><td><strong>Niveau :</strong></td><td>{{ releve.niveau }}</td></tr>
+                    </table>
+                </div>
+                
+                <div class="col-md-4">
+                    <h6>Informations Académiques</h6>
+                    <table class="table table-sm">
+                        <tr><td><strong>Année Académique :</strong></td><td>{{ releve.annee_academique }}</td></tr>
+                        <tr><td><strong>Semestre :</strong></td><td>{{ releve.semestre }}</td></tr>
+                        <tr><td><strong>Statut :</strong></td><td>{{ releve.get_statut_display }}</td></tr>
+                        <tr><td><strong>Date de Génération :</strong></td><td>{{ releve.date_creation|date:"d/m/Y H:i" }}</td></tr>
+                    </table>
+                </div>
+                
+                <div class="col-md-4">
+                    <h6>Résultats</h6>
+                    <div class="text-center">
+                        <div class="display-6 fw-bold {% if releve.moyenne_semestre >= 70 %}text-success{% else %}text-danger{% endif %}">
+                            {{ releve.moyenne_semestre|floatformat:2 }}
+                        </div>
+                        <div class="text-muted">Moyenne Semestre /100</div>
+                        
+                        {% if releve.moyenne_cumulee %}
+                        <div class="mt-3">
+                            <div class="h5 {% if releve.moyenne_cumulee >= 70 %}text-success{% else %}text-warning{% endif %}">
+                                {{ releve.moyenne_cumulee|floatformat:2 }} 
+                                <small class="text-muted">(Moyenne cumulée)</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notes détaillées -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-list-check"></i> Détail des Notes</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Code</th>
+                            <th>Cours</th>
+                            <th>Crédits</th>
+                            <th>Note /100</th>
+                            <th>Appréciation</th>
+                            <th>Professeur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for note in notes_details %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td><strong>{{ note.cours_code }}</strong></td>
+                            <td>{{ note.cours_intitule }}</td>
+                            <td>{{ note.credits }}</td>
+                            <td>
+                                <span class="badge bg-{% if note.note >= 70 %}success{% elif note.note >= 50 %}warning{% else %}danger{% endif %}">
+                                    {{ note.note|floatformat:2 }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if note.note >= 80 %}
+                                <span class="badge bg-success">Excellent</span>
+                                {% elif note.note >= 70 %}
+                                <span class="badge bg-success">Très Bien</span>
+                                {% elif note.note >= 60 %}
+                                <span class="badge bg-info">Bien</span>
+                                {% elif note.note >= 50 %}
+                                <span class="badge bg-warning">Passable</span>
+                                {% else %}
+                                <span class="badge bg-danger">Insuffisant</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ note.professeur|default:"Non assigné" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                Aucune note disponible pour ce semestre
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% if notes_details %}
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="3"><strong>TOTAL</strong></td>
+                            <td><strong>{{ notes_details|length }} cours</strong></td>
+                            <td><strong>{{ releve.moyenne_semestre|floatformat:2 }}</strong></td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques -->
+    {% if stats %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Statistiques</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h2 class="text-primary">{{ stats.nb_cours }}</h2>
+                                    <small class="text-muted">Cours suivis</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h2 class="text-success">{{ stats.cours_valides }}</h2>
+                                    <small class="text-muted">Validés (≥70)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h2 class="text-danger">{{ stats.cours_echoues }}</h2>
+                                    <small class="text-muted">Échoués</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small>Note Maximale : <strong>{{ stats.note_max|floatformat:2 }}</strong></small>
+                        </div>
+                        <div class="col-md-6">
+                            <small>Note Minimale : <strong>{{ stats.note_min|floatformat:2 }}</strong></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations Complémentaires</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            Seuil de validation : <strong>70/100</strong> (UJEPH)
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-clock"></i>
+                            Généré le : <strong>{{ releve.date_creation|date:"d/m/Y à H:i" }}</strong>
+                        </li>
+                        {% if releve.valide_par %}
+                        <li class="mb-2">
+                            <i class="bi bi-shield-check"></i>
+                            Validé par : <strong>{{ releve.valide_par.get_full_name }}</strong>
+                        </li>
+                        {% endif %}
+                        {% if releve.fichier_pdf %}
+                        <li class="mb-2">
+                            <i class="bi bi-file-pdf"></i>
+                            <a href="{{ releve.fichier_pdf.url }}" target="_blank" class="text-decoration-none">
+                                Télécharger le PDF officiel
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    
+                    {% if request.user.role == 'admin' %}
+                    <div class="mt-3 border-top pt-3">
+                        <h6>Actions Administrateur</h6>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Modifier
+                            </button>
+                            <button class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-check-circle"></i> Valider
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i> Supprimer
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Navigation -->
+    <div class="mt-4 text-center">
+        <div class="btn-group" role="group">
+            {% if request.user.role == 'admin' %}
+            <a href="{% url 'grades:historique_etudiant' releve.etudiant.id %}" class="btn btn-outline-primary">
+                <i class="bi bi-history"></i> Voir Historique Complet
+            </a>
+            {% else %}
+            <a href="{% url 'grades:mon_historique' %}" class="btn btn-outline-primary">
+                <i class="bi bi-history"></i> Mon Historique Complet
+            </a>
+            {% endif %}
+            <a href="{% url 'grades:exporter_releve_csv' releve.id %}" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-arrow-down"></i> Télécharger CSV
+            </a>
+            <a href="#" class="btn btn-outline-info" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimer
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .btn-group, .navbar, .sidebar, .card-header.bg-primary {
+        display: none !important;
+    }
+    .card {
+        border: 1px solid #000 !important;
+    }
+    .card-header {
+        background-color: #fff !important;
+        color: #000 !important;
+        border-bottom: 2px solid #000;
+    }
+}
+</style>
+{% endblock %}

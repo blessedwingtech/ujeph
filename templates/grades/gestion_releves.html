@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des Relevés de Notes - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2>📊 Gestion des Relevés de Notes</h2>
+    
+    <!-- Actions -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <a href="{% url 'grades:generer_releves' %}" class="btn btn-success w-100">
+                        <i class="bi bi-file-earmark-plus"></i> Générer Nouveaux Relevés
+                    </a>
+                </div>
+                <div class="col-md-8">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <select name="annee" class="form-select">
+                                <option value="">Toutes années</option>
+                                {% for annee in annees_disponibles %}
+                                <option value="{{ annee }}" {% if filters.annee == annee %}selected{% endif %}>
+                                    {{ annee }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select name="semestre" class="form-select">
+                                <option value="">Tous semestres</option>
+                                <option value="S1" {% if filters.semestre == 'S1' %}selected{% endif %}>S1</option>
+                                <option value="S2" {% if filters.semestre == 'S2' %}selected{% endif %}>S2</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select name="faculte" class="form-select">
+                                <option value="">Toutes facultés</option>
+                                {% for faculte in facultes %}
+                                <option value="{{ faculte.id }}" {% if filters.faculte == faculte.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ faculte.nom }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" name="etudiant" class="form-control" 
+                                   placeholder="Rechercher étudiant..." 
+                                   value="{{ filters.etudiant }}">
+                        </div>
+                        <div class="col-md-12 mt-2">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-filter"></i> Filtrer
+                            </button>
+                            <a href="{% url 'grades:gestion_releves' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Réinitialiser
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des relevés -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Étudiant</th>
+                            <th>Matricule</th>
+                            <th>Période</th>
+                            <th>Faculté</th>
+                            <th>Moyenne</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for releve in releves %}
+                        <tr>
+                            <td>{{ releve.etudiant.user.get_full_name }}</td>
+                            <td><strong>{{ releve.etudiant.matricule }}</strong></td>
+                            <td>{{ releve.annee_academique }} - {{ releve.semestre }}</td>
+                            <td>{{ releve.faculte.nom|default:"N/A" }}</td>
+                            <td>
+                                <span class="badge bg-{% if releve.moyenne_semestre >= 70 %}success{% else %}danger{% endif %}">
+                                    {{ releve.moyenne_semestre|floatformat:2 }}/100
+                                </span>
+                            </td>
+                            <td>{{ releve.get_statut_display }}</td>
+                            <td>
+                                <a href="{% url 'grades:detail_releve' releve.id %}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> Voir
+                                </a>
+                                <a href="{% url 'grades:exporter_releve_csv' releve.id %}" class="btn btn-sm btn-secondary">
+                                    <i class="bi bi-download"></i> CSV
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                Aucun relevé trouvé. Générer des relevés pour commencer.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if releves.has_other_pages %}
+            <nav class="mt-3">
+                <ul class="pagination justify-content-center">
+                    {% if releves.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ releves.previous_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Précédent
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in releves.paginator.page_range %}
+                    <li class="page-item {% if releves.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if releves.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ releves.next_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Suivant
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

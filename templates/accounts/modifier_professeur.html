@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Modifier Professeur - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-3">
+        <h3>✏️ Modifier le professeur</h3>
+        <p class="text-muted">Modifiez les informations de {{ professeur.user.get_full_name }}</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <h5 class="mb-3">📝 Informations de connexion</h5>
+                {% for field in user_form %}
+                <div class="mb-3">
+                    <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in field.errors %}
+                                {{ error }}<br>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <hr>
+                
+                <h5 class="mb-3">👨‍🏫 Informations professionnelles</h5>
+                {% for field in prof_form %}
+                <div class="mb-3">
+                    <label class="form-label">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in field.errors %}
+                                {{ error }}<br>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'accounts:liste_professeurs' %}" class="btn btn-outline-secondary">
+                        ← Annuler
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        💾 Enregistrer les modifications
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

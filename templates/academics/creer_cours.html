@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Créer un Cours - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-3">📘 Création d’un nouveau cours</h3>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form method="post" novalidate id="coursForm">
+                {% csrf_token %}
+
+                <!-- Ligne 1 -->
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        {{ form.code.label_tag }}
+                        {{ form.code }}
+                        {% if form.code.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.code.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-8">
+                        {{ form.intitule.label_tag }}
+                        {{ form.intitule }}
+                        {% if form.intitule.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.intitule.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Ligne 2 -->
+                <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                        {{ form.niveau.label_tag }}
+                        {{ form.niveau }}
+                        {% if form.niveau.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.niveau.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        {{ form.semestre.label_tag }}
+                        {{ form.semestre }}
+                        {% if form.semestre.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.semestre.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        {{ form.credits.label_tag }}
+                        {{ form.credits }}
+                        {% if form.credits.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.credits.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Ligne 3 -->
+                <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        {{ form.faculte.label_tag }}
+                        {{ form.faculte }}
+                        {% if form.faculte.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.faculte.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        {{ form.professeur.label_tag }}
+                        {{ form.professeur }}
+                        {% if form.professeur.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.professeur.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{% url 'academics:gestion_cours' %}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left"></i> Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                        <i class="bi bi-save"></i> Créer le cours
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JS validation formulaire -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('coursForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function checkValidity() {
+        submitBtn.disabled = !form.checkValidity();
+    }
+
+    form.addEventListener('input', checkValidity);
+    form.addEventListener('change', checkValidity);
+    checkValidity();
+
+    // gestion visuelle invalid
+    form.querySelectorAll('input, select').forEach(field => {
+        field.addEventListener('invalid', () => field.classList.add('is-invalid'));
+        field.addEventListener('input', () => field.classList.remove('is-invalid'));
+    });
+});
+</script>
+{% endblock %}

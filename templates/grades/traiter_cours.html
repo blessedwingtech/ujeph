@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% block title %}Traiter les Notes - {{ cours.intitule }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3><i class="bi bi-clipboard-check"></i> Validation des Notes</h3>
+            <p class="text-muted mb-0">{{ cours.intitule }} • {{ cours.faculte.nom }}</p>
+            <p class="text-muted mb-0">Professeur: {{ cours.professeur.get_full_name }}</p>
+        </div>
+        <a href="{% url 'grades:validation_notes' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    <!-- Résumé -->
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Vous allez valider ou rejeter <strong>toutes les {{ notes.count }} notes</strong> 
+        de ce cours en une seule action.
+    </div>
+
+    <!-- Statistiques rapides -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ notes.count }}</h3>
+                    <p class="text-muted mb-0">Notes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    {% load custom_filters %}
+                    <h3 class="text-success">{{ notes|average:"valeur"|floatformat:1 }}</h3>
+                    <p class="text-muted mb-0">Moyenne</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-info">{{ notes|min_value:"valeur" }}</h3>
+                    <p class="text-muted mb-0">Minimum</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ notes|max_value:"valeur" }}</h3>
+                    <p class="text-muted mb-0">Maximum</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des notes -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-list-check"></i> Notes soumises</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Étudiant</th>
+                            <th>Matricule</th>
+                            <th>Note</th>
+                            <th>Saisie le</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for note in notes %}
+                        <tr>
+                            <td>{{ note.etudiant.user.get_full_name }}</td>
+                            <td>{{ note.etudiant.matricule }}</td>
+                            <td><strong>{{ note.valeur }}/100</strong></td>
+                            <td>{{ note.date_soumission|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Aucune note soumise</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-gear"></i> Décision finale</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" id="decisionForm">
+                {% csrf_token %}
+                
+                <!-- Bouton Valider -->
+                <div class="mb-4">
+                    <button type="button" 
+                            id="btnPublier"
+                            class="btn btn-success btn-lg w-100 py-3">
+                        <i class="bi bi-check-circle me-2"></i>
+                        ✅ VALIDER ET PUBLIER TOUTES LES NOTES
+                    </button>
+                    <small class="text-muted d-block mt-2">
+                        Les notes seront immédiatement visibles par les étudiants.
+                    </small>
+                </div>
+                
+                <!-- Rejet avec motif -->
+                <div class="border-top pt-4">
+                    <h5><i class="bi bi-x-circle me-2"></i> Rejeter les notes</h5>
+                    <div class="mb-3">
+                        <label for="motif_rejet" class="form-label">
+                            <strong>Motif du rejet *</strong>
+                        </label>
+                        <textarea class="form-control" 
+                                  id="motif_rejet" 
+                                  name="motif_rejet" 
+                                  rows="3"
+                                  placeholder="Expliquez clairement pourquoi vous rejetez ces notes..."
+                                  required></textarea>
+                        <div class="form-text">
+                            Ce motif sera visible par le professeur <strong>{{ cours.professeur.get_full_name }}</strong>
+                        </div>
+                    </div>
+                    
+                    <button type="button" 
+                            id="btnRejeter"
+                            class="btn btn-danger w-100 py-2">
+                        <i class="bi bi-x-circle me-2"></i>
+                        REJETER TOUTES LES NOTES
+                    </button>
+                    <small class="text-muted d-block mt-2">
+                        Les notes retourneront à l'état "brouillon" et pourront être modifiées par le professeur.
+                    </small>
+                </div>
+                
+                <!-- Champ caché pour l'action -->
+                <input type="hidden" name="action" id="actionField" value="">
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript pour gérer les confirmations -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('decisionForm');
+    const actionField = document.getElementById('actionField');
+    const btnPublier = document.getElementById('btnPublier');
+    const btnRejeter = document.getElementById('btnRejeter');
+    const motifRejet = document.getElementById('motif_rejet');
+    
+    // Gestion de la publication
+    if (btnPublier) {
+        btnPublier.addEventListener('click', async function() {
+            const result = await Swal.fire({
+                title: 'Confirmer la publication',
+                html: `
+                    <div class="text-start">
+                        <p>Êtes-vous sûr de vouloir publier <strong>{{ notes.count }} notes</strong> ?</p>
+                        <div class="alert alert-success small">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Conséquence :</strong>
+                            <ul class="mb-0 mt-1">
+                                <li>Les notes seront visibles par les étudiants</li>
+                                <li>Le professeur ne pourra plus les modifier</li>
+                                <li>Action définitive</li>
+                            </ul>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Oui, publier',
+                cancelButtonText: 'Annuler',
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d'
+            });
+            
+            if (result.isConfirmed) {
+                actionField.value = 'publier';
+                form.submit();
+            }
+        });
+    }
+    
+    // Gestion du rejet
+    if (btnRejeter) {
+        btnRejeter.addEventListener('click', async function() {
+            // Vérifier que le motif est rempli
+            if (!motifRejet.value.trim()) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Motif requis',
+                    text: 'Vous devez fournir un motif de rejet.',
+                    confirmButtonText: 'OK'
+                });
+                motifRejet.focus();
+                return;
+            }
+            
+            const result = await Swal.fire({
+                title: 'Confirmer le rejet',
+                html: `
+                    <div class="text-start">
+                        <p>Êtes-vous sûr de vouloir rejeter <strong>{{ notes.count }} notes</strong> ?</p>
+                        <div class="alert alert-danger small">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Conséquence :</strong>
+                            <ul class="mb-0 mt-1">
+                                <li>Les notes retourneront à l'état "brouillon"</li>
+                                <li>Le professeur devra les corriger et resoumettre</li>
+                                <li>Motif: ${motifRejet.value.substring(0, 100)}${motifRejet.value.length > 100 ? '...' : ''}</li>
+                            </ul>
+                        </div>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Oui, rejeter',
+                cancelButtonText: 'Annuler',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d'
+            });
+            
+            if (result.isConfirmed) {
+                actionField.value = 'rejeter';
+                form.submit();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

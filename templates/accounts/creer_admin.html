@@ -1,0 +1,335 @@
+<!-- templates/accounts/creer_admin.html -->
+{% extends 'base.html' %}
+{% block title %}Créer un Administrateur - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <h3 class="mb-2">
+            <i class="bi bi-person-shield text-primary"></i> Ajouter un Administrateur
+        </h3>
+        <p class="text-muted mb-0">Remplissez le formulaire ci-dessous pour ajouter un nouvel administrateur au système.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <!-- Message d'information -->
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Information importante :</strong> 
+                        Laissez le champ mot de passe vide pour utiliser "1234" par défaut.
+                        L'administrateur devra changer son mot de passe à sa première connexion.
+                    </div>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <h5 class="mb-3 border-bottom pb-2">
+                            <i class="bi bi-person-badge"></i> Informations de connexion
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Nom d'utilisateur *</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.username.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Email *</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.email.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Prénom *</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.first_name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Nom *</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.last_name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Téléphone (optionnel)</label>
+                                {{ form.telephone }}
+                                {% if form.telephone.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.telephone.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <input type="hidden" name="password" value="1234">
+                        </div>
+                        
+                        <!-- Niveau d'accès -->
+                        <h5 class="mb-3 border-bottom pb-2 mt-4">
+                            <i class="bi bi-shield-check"></i> Niveau d'accès
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-semibold">Niveau d'accès *</label>
+                                {{ form.niveau_acces }}
+                                <small class="form-text text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Détermine les permissions de base de l'administrateur
+                                </small>
+                                {% if form.niveau_acces.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.niveau_acces.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Explications dynamiques -->
+                                <div id="niveauInfo" class="alert alert-info">
+                                    <strong id="niveauTitre">Super Administrateur</strong>
+                                    <p id="niveauDesc" class="mb-0 small">
+                                        Toutes les permissions : utilisateurs, cours, notes, facultés
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Permissions détaillées (affichées selon choix) -->
+                        <div id="permissionsDetail" class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Permissions activées :</strong>
+                            <ul id="permissionsList" class="mb-0 mt-2">
+                                <li>👥 Gestion des utilisateurs</li>
+                                <li>📚 Gestion des cours</li>
+                                <li>📝 Validation des notes</li>
+                                <li>🏛️ Gestion des facultés</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a href="{% url 'accounts:liste_admins' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Retour à la liste
+                            </a>
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="bi bi-check-circle"></i> Créer l'administrateur
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar avec informations -->
+        <div class="col-md-4">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb"></i> À savoir</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-primary">Super Administrateur</h6>
+                        <p class="small mb-2">
+                            <i class="bi bi-shield-fill-check text-success me-1"></i>
+                            Accès complet à toutes les fonctionnalités
+                        </p>
+                        <ul class="small text-muted mb-0 ps-3">
+                            <li>Gestion des utilisateurs</li>
+                            <li>Gestion des cours et programmes</li>
+                            <li>Validation et publication des notes</li>
+                            <li>Gestion des facultés et départements</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-warning">Admin Académique</h6>
+                        <p class="small mb-2">
+                            <i class="bi bi-book text-warning me-1"></i>
+                            Focus sur les aspects académiques
+                        </p>
+                        <ul class="small text-muted mb-0 ps-3">
+                            <li>Gestion des cours et emplois du temps</li>
+                            <li>Validation des notes et bulletins</li>
+                            <li>Gestion des facultés</li>
+                            <li class="text-decoration-line-through">Création d'utilisateurs</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-info">Gestionnaire Utilisateurs</h6>
+                        <p class="small mb-2">
+                            <i class="bi bi-people text-info me-1"></i>
+                            Gestion des comptes uniquement
+                        </p>
+                        <ul class="small text-muted mb-0 ps-3">
+                            <li>Création et gestion des comptes</li>
+                            <li>Réinitialisation des mots de passe</li>
+                            <li class="text-decoration-line-through">Gestion académique</li>
+                            <li class="text-decoration-line-through">Validation des notes</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <small>
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Les permissions peuvent être ajustées individuellement après création.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript pour le choix dynamique du niveau d'accès -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const niveauSelect = document.querySelector('#id_niveau_acces');
+    const niveauInfo = document.getElementById('niveauInfo');
+    const niveauTitre = document.getElementById('niveauTitre');
+    const niveauDesc = document.getElementById('niveauDesc');
+    const permissionsList = document.getElementById('permissionsList');
+    const permissionsDetail = document.getElementById('permissionsDetail');
+    
+    const niveaux = {
+        'super': {
+            titre: 'Super Administrateur',
+            desc: 'Accès complet à toutes les fonctionnalités du système',
+            permissions: [
+                '👥 Gestion des utilisateurs',
+                '📚 Gestion des cours et programmes', 
+                '📝 Validation et publication des notes',
+                '🏛️ Gestion des facultés et départements'
+            ],
+            badge: '<span class="badge bg-danger">SUPER</span>',
+            classe: 'alert-danger',
+            icon: 'bi-shield-fill-check'
+        },
+        'academique': {
+            titre: 'Administrateur Académique', 
+            desc: 'Gère les aspects académiques mais pas les utilisateurs',
+            permissions: [
+                '📚 Gestion des cours et emplois du temps',
+                '📝 Validation des notes et bulletins',
+                '🏛️ Gestion des facultés',
+                '<span class="text-decoration-line-through text-muted">Création d\'utilisateurs</span>'
+            ],
+            badge: '<span class="badge bg-warning">ACADÉMIQUE</span>',
+            classe: 'alert-warning',
+            icon: 'bi-book'
+        },
+        'utilisateurs': {
+            titre: 'Gestionnaire Utilisateurs',
+            desc: 'Gère uniquement les comptes utilisateurs',
+            permissions: [
+                '👥 Création et gestion des comptes utilisateurs',
+                '🔐 Réinitialisation des mots de passe',
+                '<span class="text-decoration-line-through text-muted">Gestion académique</span>',
+                '<span class="text-decoration-line-through text-muted">Validation des notes</span>'
+            ],
+            badge: '<span class="badge bg-info">UTILISATEURS</span>',
+            classe: 'alert-info',
+            icon: 'bi-people'
+        }
+    };
+    
+    function updateNiveauInfo() {
+        const niveau = niveauSelect.value;
+        const info = niveaux[niveau];
+        
+        // Mettre à jour le titre avec badge
+        niveauTitre.innerHTML = `${info.badge} ${info.titre}`;
+        niveauDesc.textContent = info.desc;
+        
+        // Mettre à jour la couleur de l'alerte
+        niveauInfo.className = `alert ${info.classe}`;
+        
+        // Mettre à jour les permissions
+        permissionsList.innerHTML = '';
+        info.permissions.forEach(perm => {
+            const li = document.createElement('li');
+            li.innerHTML = perm;
+            permissionsList.appendChild(li);
+        });
+        
+        // Mettre à jour la couleur de l'alerte des permissions
+        permissionsDetail.className = `alert ${info.classe}`;
+        
+        // Changer l'icône
+        const icon = permissionsDetail.querySelector('i');
+        icon.className = `bi ${info.icon} me-2`;
+    }
+    
+    if (niveauSelect) {
+        niveauSelect.addEventListener('change', updateNiveauInfo);
+        updateNiveauInfo(); // Initialiser
+    }
+    
+    // Validation des champs requis
+    const requiredFields = ['username', 'email', 'first_name', 'last_name', 'niveau_acces'];
+    
+    requiredFields.forEach(fieldId => {
+        const field = document.getElementById(`id_${fieldId}`);
+        if (field) {
+            field.addEventListener('blur', function() {
+                if (!this.value.trim()) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            });
+        }
+    });
+    
+    // Validation de l'email
+    const emailField = document.getElementById('id_email');
+    if (emailField) {
+        emailField.addEventListener('blur', function() {
+            const email = this.value.trim();
+            if (email && !email.includes('@')) {
+                this.classList.add('is-invalid');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'text-danger small mt-1';
+                errorDiv.textContent = 'Format email invalide';
+                this.parentNode.appendChild(errorDiv);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

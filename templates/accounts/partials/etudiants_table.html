@@ -1,0 +1,103 @@
+<!-- templates/accounts/partials/etudiants_table.html -->
+{% if etudiants %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Matricule</th>
+                <th>Nom Complet</th>
+                <th>Faculté</th>
+                <th>Niveau</th>
+                <th>Téléphone</th>
+                <th>Date d'Inscription</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in etudiants %}
+            <tr>
+                <td><strong>{{ e.matricule }}</strong></td>
+                <td>{{ e.user.get_full_name }}</td>
+                <td>{{ e.faculte.nom }}</td>
+                <td>{{ e.get_niveau_display }}</td>
+                <td>{{ e.user.telephone|default:"—" }}</td>
+                <td>{{ e.date_inscription|date:"d/m/Y" }}</td>
+                <td>
+                    {% if e.id %}
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'accounts:modifier_etudiant' e.id %}" 
+                           class="btn btn-outline-primary me-1" title="Modifier">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                        <a href="{% url 'accounts:supprimer_etudiant' e.id %}"
+                           class="btn btn-outline-danger" title="Supprimer"
+                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet étudiant ?');">
+                            <i class="bi bi-trash"></i>
+                        </a> 
+                    </div>
+                    {% else %}
+                    <span class="text-muted">ID manquant</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if etudiants.has_other_pages %}
+<nav aria-label="Pagination étudiants" class="mt-3">
+    <ul class="pagination pagination-sm justify-content-center">
+        {% if etudiants.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ etudiants.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search|urlencode }}{% endif %}" 
+               aria-label="Précédent">
+                <span aria-hidden="true">←</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">←</span>
+        </li>
+        {% endif %}
+        
+        {% for num in etudiants.paginator.page_range %}
+            {% if num == etudiants.number %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% else %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search|urlencode }}{% endif %}">
+                    {{ num }}
+                </a>
+            </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if etudiants.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ etudiants.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search|urlencode }}{% endif %}" 
+               aria-label="Suivant">
+                <span aria-hidden="true">→</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link">→</span>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-warning text-center">
+    <h5>⚠️ Aucun étudiant trouvé</h5>
+    <p>
+        {% if request and request.GET.search %}
+            Aucun résultat pour "{{ request.GET.search }}"
+        {% else %}
+            Ajoutez un nouvel étudiant pour commencer.
+        {% endif %}
+    </p>
+</div>
+{% endif %}

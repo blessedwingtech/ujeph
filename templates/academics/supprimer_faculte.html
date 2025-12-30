@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Supprimer Faculté - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+            <h4 class="mb-0">🗑️ Supprimer la Faculté</h4>
+        </div>
+        <div class="card-body">
+            <h5>Êtes-vous sûr de vouloir supprimer cette faculté ?</h5>
+            
+            <div class="alert alert-warning mt-3">
+                <strong>{{ faculte.nom }}</strong> ({{ faculte.code }})<br>
+                <strong>Description:</strong> {{ faculte.description|truncatechars:100 }}
+            </div>
+
+            <p class="text-danger">
+                <strong>⚠️ Attention :</strong> Cette action est irréversible. 
+                Tous les cours et étudiants de cette faculté seront affectés.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'academics:liste_facultes' %}" class="btn btn-secondary">
+                        ← Annuler
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        🗑️ Confirmer la suppression
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% for cours in cours %}
+<div class="col-md-6">
+    <div class="card h-100 shadow-sm">
+        <div class="card-body">
+            <h6 class="card-title">{{ cours.intitule }}</h6>
+            <p class="card-text mb-1">
+                Code : {{ cours.code }}<br>
+                Niveau : {{ cours.get_niveau_display }}<br>
+                Semestre : {{ cours.get_semestre_display }}<br>
+                Crédits : {{ cours.credits }}
+            </p>
+            {% if cours.professeur %}
+            <p class="card-text mb-0">Professeur : {{ cours.professeur.get_full_name }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% empty %}
+<p class="text-center">Aucun cours disponible pour cette faculté.</p>
+{% endfor %}

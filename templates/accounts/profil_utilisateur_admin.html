@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}Profil utilisateur - {{ utilisateur.username }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-xl-8">
+            <div class="card shadow-sm">
+
+                <!-- Header -->
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>
+                        Profil utilisateur
+                    </h4>
+                    <a href="{% url 'accounts:gestion_utilisateurs' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i> Retour
+                    </a>
+                </div>
+
+                <div class="card-body">
+
+                    <!-- Avatar + rôle -->
+                    <div class="text-center mb-4">
+                        <div class="avatar-circle mx-auto mb-2 d-flex align-items-center justify-content-center">
+                            <i class="fas fa-user fa-3x text-primary"></i>
+                        </div>
+                        <span class="badge bg-info fs-6">
+                            {{ utilisateur.get_role_display }}
+                        </span>
+                    </div>
+
+                    <!-- ================= INFOS COMPTE ================= -->
+                    <h5 class="border-bottom pb-2 mb-3">
+                        <i class="fas fa-id-card me-1"></i> Informations du compte
+                    </h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <strong>Nom complet :</strong>
+                            <div class="bg-light rounded p-2">
+                                {{ utilisateur.get_full_name|default:"—" }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-2">
+                            <strong>Nom d'utilisateur :</strong>
+                            <div class="bg-light rounded p-2">
+                                {{ utilisateur.username }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-2">
+                            <strong>Email :</strong>
+                            <div class="bg-light rounded p-2">
+                                {{ utilisateur.email|default:"—" }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-2">
+                            <strong>Statut du compte :</strong>
+                            <div class="bg-light rounded p-2">
+                                {% if utilisateur.is_active %}
+                                    <span class="badge bg-success">Actif</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactif</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-2">
+                            <strong>Date d'inscription :</strong>
+                            <div class="bg-light rounded p-2">
+                                {{ utilisateur.date_joined|date:"d/m/Y" }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-2">
+                            <strong>Dernière connexion :</strong>
+                            <div class="bg-light rounded p-2">
+                                {{ utilisateur.last_login|date:"d/m/Y H:i"|default:"Jamais" }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ================= ETUDIANT ================= -->
+                    {% if utilisateur.role == 'student' %}
+                    <h5 class="border-bottom pb-2 mt-4">
+                        <i class="fas fa-graduation-cap me-1"></i> Informations académiques
+                    </h5>
+
+                    <div class="row">
+                        {% if info_supp.matricule %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Matricule :</strong>
+                            <div class="bg-light rounded p-2">{{ info_supp.matricule }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if info_supp.faculte %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Faculté :</strong>
+                            <div class="bg-light rounded p-2">{{ info_supp.faculte }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if info_supp.niveau %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Niveau :</strong>
+                            <div class="bg-light rounded p-2">{{ info_supp.niveau }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if info_supp.semestre %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Semestre courant :</strong>
+                            <div class="bg-light rounded p-2">{{ info_supp.semestre }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if info_supp.date_naissance %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Date de naissance :</strong>
+                            <div class="bg-light rounded p-2">
+                                {{ info_supp.date_naissance|date:"d/m/Y" }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if info_supp.sexe %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Sexe :</strong>
+                            <div class="bg-light rounded p-2">{{ info_supp.sexe }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if info_supp.adresse %}
+                        <div class="col-md-12 mb-2">
+                            <strong>Adresse :</strong>
+                            <div class="bg-light rounded p-2">{{ info_supp.adresse }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if info_supp.telephone_parent %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Téléphone du parent :</strong>
+                            <div class="bg-light rounded p-2">{{ info_supp.telephone_parent }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- ================= PROFESSEUR ================= -->
+                    {% if utilisateur.role == 'prof' %}
+                    <h5 class="border-bottom pb-2 mt-4">
+                        <i class="fas fa-chalkboard-teacher me-1"></i> Informations professionnelles
+                    </h5>
+
+                    <div class="row">
+                        {% if info_supp.specialite %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Spécialité :</strong>
+                            <div class="bg-light rounded p-2">{{ info_supp.specialite }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if info_supp.grade %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Grade :</strong>
+                            <div class="bg-light rounded p-2">{{ info_supp.grade }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if info_supp.statut %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Statut :</strong>
+                            <div class="bg-light rounded p-2">{{ info_supp.statut }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if info_supp.date_embauche %}
+                        <div class="col-md-6 mb-2">
+                            <strong>Date d'embauche :</strong>
+                            <div class="bg-light rounded p-2">
+                                {{ info_supp.date_embauche|date:"d/m/Y" }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- ================= ADMIN ================= -->
+                    {% if utilisateur.role == 'admin' %}
+                    <h5 class="border-bottom pb-2 mt-4">
+                        <i class="fas fa-shield-alt me-1"></i> Informations administratives
+                    </h5>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <strong>Niveau d'accès :</strong>
+                            <div class="bg-light rounded p-2">
+                                {{ info_supp.niveau_acces|default:"—" }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-2">
+                            <strong>Date de nomination :</strong>
+                            <div class="bg-light rounded p-2">
+                                {{ info_supp.date_nomination|date:"d/m/Y"|default:"—" }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+                <!-- Footer -->
+                <div class="card-footer bg-light text-muted small text-center">
+                    <i class="fas fa-lock me-1"></i>
+                    Consultation en lecture seule — aucune modification n’est autorisée
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-circle {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background-color: rgba(13,110,253,.1);
+    border: 3px solid var(--bs-primary);
+}
+</style>
+{% endblock %}
