@@ -1,4 +1,4 @@
-{% load static %}
+{% load static %} 
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -573,13 +573,18 @@
                                     <i class="fas fa-book-open me-1"></i> Mes Cours
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'academics:mes_annonces' %}">
+                                    <i class="fas fa-bell me-1"></i> Mes Annonces
+                                </a>
+                            </li>
                             <li hidden class="nav-item">
                                 <a class="nav-link" href="{% url 'academics:liste_annonces' %}">
-                                    <i class="fas fa-bullhorn me-1"></i> Annonces
+                                    <i class="fas fa-bullhorn me-1"></i> Actualités
                                 </a>
                             </li>
 
-                        {% elif user.role == 'etudiant' %}
+                        {% elif user.role == 'student' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'academics:mes_cours_etudiant' %}">
                                     <i class="fas fa-book-reader me-1"></i> Mes Cours
@@ -591,10 +596,10 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'academics:annonces_actives' %}">
-                                    <i class="fas fa-newspaper me-1"></i> Actualités
+                                <a class="nav-link" href="{% url 'academics:mes_annonces' %}">
+                                    <i class="fas fa-bell me-1"></i> Mes Annonces
                                 </a>
-                            </li>
+                            </li> 
                         {% endif %}
                     {% endif %}
                 </ul>
@@ -636,7 +641,13 @@
                                     </form>
                                 </li>
                             </ul>
+
                         </div>
+                            
+                                <a style="font-size: 1em;" class="text-light text-decoration-none m-2" href="{% url 'accounts:aide' %}">
+                                    <i class="bi bi-question-circle me-1"></i>
+                                </a>
+                           
                     {% else %}
                         {% with request.resolver_match.url_name as url_name %}
                             {% if url_name != 'login' %}

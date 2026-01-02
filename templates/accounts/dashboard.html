@@ -54,6 +54,7 @@
         <!-- Statistiques en grille responsive -->
         <div class="row g-3 g-md-4 mb-4">
             <div class="col-6 col-md-3">
+                <a href="{% url 'accounts:liste_etudiants' %}" class="text-decoration-none">
                 <div class="card border-0 shadow-sm h-100 hover-shadow">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -67,9 +68,11 @@
                         </div>
                     </div>
                 </div>
+                </a>
             </div>
             
             <div class="col-6 col-md-3">
+                <a href="{% url 'accounts:liste_professeurs' %}" class="text-decoration-none">
                 <div class="card border-0 shadow-sm h-100 hover-shadow">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -83,9 +86,11 @@
                         </div>
                     </div>
                 </div>
+                </a>
             </div>
             
             <div class="col-6 col-md-3 mt-3 mt-md-0">
+                <a href="{% url 'academics:liste_facultes' %}" class="text-decoration-none">
                 <div class="card border-0 shadow-sm h-100 hover-shadow">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -99,9 +104,11 @@
                         </div>
                     </div>
                 </div>
+                </a>
             </div>
             
             <div class="col-6 col-md-3 mt-3 mt-md-0">
+                <a href="{% url 'academics:liste_cours' %}" class="text-decoration-none">
                 <div class="card border-0 shadow-sm h-100 hover-shadow">
                     <div class="card-body">
                         <div class="d-flex align-items-center">
@@ -115,6 +122,7 @@
                         </div>
                     </div>
                 </div>
+                </a>
             </div>
         </div>
 
@@ -224,7 +232,11 @@
                                     <h4 class="mb-0 text-success">{{ connexions_recentes }}</h4>
                                     {% if connexions_recentes > 0 %}
                                     <small class="text-muted">
-                                        {{ connexions_recentes|percentage:total_utilisateurs|floatformat:0 }}% des utilisateurs
+                                        {% if total_utilisateurs > 0 %}
+                                            {{ connexions_recentes|floatformat:0 }} / {{ total_utilisateurs }} ({% widthratio connexions_recentes total_utilisateurs 100 %}%)
+                                        {% else %}
+                                            0%
+                                        {% endif %}
                                     </small>
                                     {% endif %}
                                 </div>

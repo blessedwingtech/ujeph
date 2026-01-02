@@ -2797,3 +2797,12 @@ def vue_audit(request):
     
 #     return render(request, 'accounts/audit.html', context)
 
+ 
+
+@login_required
+def aide(request):
+    """
+    Manuel d'utilisation intégré (Menu Aide)
+    Accessible selon le rôle de l'utilisateur
+    """
+    return render(request, 'accounts/aide.html')

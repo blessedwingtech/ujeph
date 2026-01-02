@@ -1,3 +1,4 @@
+# grades/templatetags/custom_filters.py
 from django import template
 
 register = template.Library()
@@ -138,22 +139,49 @@ def max_value(queryset, field_name):
 # --- TAGS PERSONNALISÉS ---
 @register.simple_tag
 def get_note_for_cours(cours_avec_notes, cours_id):
-    """Retourne la note pour un cours donné - DEBUG VERSION"""
-    print(f"DEBUG get_note_for_cours: cours_id={cours_id}")
-    print(f"DEBUG cours_avec_notes type: {type(cours_avec_notes)}")
-    
+    """Retourne la note pour un cours donné"""
     if not cours_avec_notes:
-        print(f"DEBUG: cours_avec_notes est vide")
         return None
-    
+
     for item in cours_avec_notes:
         cours = item.get('cours')
         note = item.get('note')
-        print(f"DEBUG: Item - cours_id={cours.id if cours else 'None'}, note={note}")
         
         if cours and cours.id == cours_id:
-            print(f"DEBUG: Note trouvée! {note}")
             return note
     
-    print(f"DEBUG: Aucune note trouvée pour cours_id={cours_id}")
     return None
+
+# Supprimez cette partie dupliquée - elle ne devrait pas être ici
+# academics/templatetags/annonce_tags.py devrait être un fichier séparé
+# from django import template
+# 
+# register = template.Library()
+# 
+@register.filter
+def get_annonce_icon(type_annonce):
+    """
+    Retourne l'icône correspondant au type d'annonce
+    """
+    icons = {
+        'general': 'bi-megaphone',
+        'academique': 'bi-book',
+        'urgence': 'bi-exclamation-triangle',
+        'evenement': 'bi-calendar-event',
+        'emploi': 'bi-briefcase',
+    }
+    return icons.get(type_annonce, 'bi-bell')
+# 
+@register.filter
+def get_annonce_color(type_annonce):
+    """
+    Retourne la couleur Bootstrap correspondant au type d'annonce
+    """
+    colors = {
+        'general': 'primary',
+        'academique': 'info',
+        'urgence': 'danger',
+        'evenement': 'success',
+        'emploi': 'warning',
+    }
+    return colors.get(type_annonce, 'secondary')

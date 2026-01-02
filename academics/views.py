@@ -21,6 +21,7 @@ from .forms import AnnonceForm
 from django.db.models import Q
 User = get_user_model()  
 from django.http import HttpResponse 
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 import csv
 import io 
 
@@ -126,21 +127,28 @@ def mes_cours_professeur(request):
 
 @login_required
 def mes_cours_etudiant(request):
-    """Étudiant: Voir les cours de sa faculté/niveau"""
+    """Étudiant: Voir les cours de sa faculté/niveau - MÊME LOGIQUE QUE DASHBOARD"""
     if request.user.role != User.Role.ETUDIANT or not hasattr(request.user, 'etudiant'):
         messages.error(request, "Accès réservé aux étudiants")
         return redirect('accounts:dashboard')
     
-    etudiant = request.user.etudiant
-    mes_cours = Cours.objects.filter(
-        inscriptions__etudiant=etudiant
+    etudiant = request.user.etudiant  # Variable nommée 'etudiant'
+    
+    # MÊME CODE QUE DASHBOARD - CORRIGEZ LA VARIABLE
+    from academics.models import Cours
+    
+    cours_inscrits = Cours.objects.filter(
+        inscriptions__etudiant=etudiant  # ← Utilisez 'etudiant' pas 'user.etudiant'
     ).distinct().select_related('professeur', 'faculte')
     
     context = {
         'etudiant': etudiant,
-        'mes_cours': mes_cours,
+        'cours_inscrits': cours_inscrits,  # Même nom que dashboard
     }
+    
     return render(request, 'academics/mes_cours_etudiant.html', context)
+
+     
 
 @login_required
 @permission_required(is_admin, redirect_url='accounts:dashboard')
@@ -909,7 +917,90 @@ def annonces_actives(request):
     
     return JsonResponse({'annonces': annonces_list})
 
+# academics/views.py - AJOUTEZ cette vue
 
+@login_required
+def mes_annonces(request):
+    """
+    Vue personnalisée qui montre à chaque utilisateur uniquement 
+    les annonces qui le concernent selon son rôle
+    """
+    user = request.user
+    
+    # Base query pour annonces actives
+    annonces = Annonce.objects.filter(
+        est_publie=True,
+        date_publication__lte=timezone.now()
+    ).exclude(
+        date_expiration__lt=timezone.now() if timezone.now() else Q()
+    )
+    
+    # Filtrer selon le rôle de l'utilisateur
+    if user.role == 'student':
+        # Étudiant: pour tous + étudiants + faculté spécifique
+        annonces = annonces.filter(
+            Q(destinataire_tous=True) |
+            Q(destinataire_etudiants=True) |
+            (Q(faculte__isnull=False) & Q(faculte=user.etudiant.faculte))
+        ).distinct()
+        
+    elif user.role == 'prof':
+        # Professeur: pour tous + professeurs + faculté(s) liée(s)
+        # Vous aurez besoin d'une relation entre Prof et Faculté
+        # Pour l'instant, on prend la logique simple
+        annonces = annonces.filter(
+            Q(destinataire_tous=True) |
+            Q(destinataire_professeurs=True)
+        ).distinct()
+        
+    elif user.role == 'admin':
+        # Admin: par défaut voir toutes les annonces
+        # mais on peut filtrer selon permissions
+        if not can_manage_annonces(user):
+            # Admin sans permission de gestion voit selon son rôle admin
+            annonces = annonces.filter(
+                Q(destinataire_tous=True) |
+                Q(destinataire_admins=True)
+            ).distinct()
+    
+    # Trier par importance et date
+    annonces = annonces.order_by('-est_important', '-priorite', '-date_publication')
+    
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(annonces, 15)  # 15 annonces par page
+    
+    try:
+        page_obj = paginator.page(page)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+    
+    context = {
+        'page_obj': page_obj,
+        'annonces': page_obj.object_list,
+        'user_role': user.get_role_display(),
+        'now': timezone.now(),
+    }
+    
+    # Étudiant spécifique
+    if user.role == 'student' and hasattr(user, 'etudiant'):
+        context['faculte_etudiant'] = user.etudiant.faculte
+    
+    return render(request, 'annonces/mes_annonces.html', context)
+
+# academics/views.py - API pour les notifications
+
+@login_required
+def count_nouvelles_annonces(request):
+    """Retourne le nombre de nouvelles annonces non lues"""
+    # Vous aurez besoin d'un modèle pour tracker les annonces lues
+    # Pour l'instant, on retourne un nombre fictif ou zéro
+    return JsonResponse({
+        'count': 0,
+        'has_new': False
+    })
 
 def annonces_par_type(request, type_annonce):
     """Filtrer les annonces par type"""

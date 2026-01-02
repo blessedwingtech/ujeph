@@ -1,0 +1,524 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Mes Annonces - SG-UJEPH{% endblock %}
+
+{% block extra_head %}
+<style>
+    .annonce-card {
+        border-left: 4px solid #007bff;
+        transition: all 0.2s;
+        margin-bottom: 15px;
+    }
+    
+    .annonce-card:hover {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .annonce-card-urgence {
+        border-left-color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.05);
+    }
+    
+    .annonce-card-important {
+        border-left-color: #ffc107;
+        background-color: rgba(255, 193, 7, 0.05);
+    }
+    
+    .annonce-card-academique {
+        border-left-color: #17a2b8;
+        background-color: rgba(23, 162, 184, 0.05);
+    }
+    
+    .badge-role {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+    }
+    
+    .time-badge {
+        font-size: 0.75rem;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+    
+    .filter-badge {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-badge:hover {
+        opacity: 0.8;
+    }
+    
+    .empty-annonces {
+        padding: 60px 20px;
+        text-align: center;
+        color: #6c757d;
+    }
+    
+    .modal-annonce-content {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- En-tête personnalisé -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="mb-3">
+                <i class="bi bi-bell-fill text-primary"></i>
+                Mes Annonces
+            </h2>
+            
+            <div class="d-flex align-items-center flex-wrap gap-3">
+                <div>
+                    <span class="badge bg-primary">
+                        <i class="bi bi-person-circle me-1"></i>
+                        {{ user_role }}
+                    </span>
+                    {% if faculte_etudiant %}
+                    <span class="badge bg-info ms-2">
+                        <i class="bi bi-building me-1"></i>
+                        {{ faculte_etudiant.nom }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <div class="ms-auto">
+                    <div class="input-group input-group-sm" style="width: 300px;">
+                        <input type="text" id="searchAnnonces" class="form-control" 
+                               placeholder="Rechercher dans mes annonces...">
+                        <button class="btn btn-outline-primary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <p class="text-muted mt-3 mb-0">
+                <i class="bi bi-info-circle me-1"></i>
+                Cette page affiche uniquement les annonces qui vous concernent en fonction de votre rôle 
+                {% if faculte_etudiant %}et de votre faculté ({{ faculte_etudiant.nom }}){% endif %}.
+            </p>
+        </div>
+    </div>
+
+    <!-- Filtres rapides -->
+    <div class="card mb-4">
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="text-muted me-2">Filtrer par :</span>
+                
+                <button class="btn btn-sm btn-outline-primary filter-type active" data-type="all">
+                    Toutes
+                </button>
+                
+                {% for type_key, type_label in type_choices %}
+                <button class="btn btn-sm btn-outline-secondary filter-type" data-type="{{ type_key }}">
+                    <i class="bi {{ type_key|get_annonce_icon }} me-1"></i>
+                    {{ type_label }}
+                </button>
+                {% endfor %}
+                
+                <div class="dropdown ms-auto">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown">
+                        <i class="bi bi-filter me-1"></i>
+                        Plus de filtres
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="#" id="filterImportant">
+                                <i class="bi bi-star text-warning me-2"></i>
+                                Importantes seulement
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="filterToday">
+                                <i class="bi bi-calendar-day text-info me-2"></i>
+                                Aujourd'hui
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="clearFilters">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Effacer les filtres
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu des annonces -->
+    <div id="annoncesContainer">
+        {% if page_obj.object_list %}
+            <div class="row">
+                {% for annonce in page_obj %}
+                <div class="col-lg-6 mb-3 annonce-item" 
+                     data-type="{{ annonce.type_annonce }}"
+                     data-important="{{ annonce.est_important|yesno:'true,false' }}"
+                     data-date="{{ annonce.date_publication|date:'Y-m-d' }}">
+                    <div class="card annonce-card annonce-card-{{ annonce.type_annonce }} {% if annonce.est_important %}annonce-card-important{% endif %}">
+                        <div class="card-body">
+                            <!-- En-tête de l'annonce -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <span class="badge bg-{{ annonce.get_badge_color }} me-2">
+                                        <i class="bi {{ annonce.get_icon }} me-1"></i>
+                                        {{ annonce.get_type_annonce_display }}
+                                    </span>
+                                    
+                                    {% if annonce.est_important %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-star-fill me-1"></i>
+                                        Important
+                                    </span>
+                                    {% endif %}
+                                    
+                                    {% if annonce.priorite == 'critique' %}
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                        Critique
+                                    </span>
+                                    {% elif annonce.priorite == 'haute' %}
+                                    <span class="badge bg-danger bg-opacity-75">
+                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                        Haute priorité
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="text-end">
+                                    <span class="time-badge badge">
+                                        <i class="bi bi-clock me-1"></i>
+                                        {{ annonce.date_publication|timesince }}
+                                    </span>
+                                    {% if annonce.faculte %}
+                                    <span class="badge bg-info mt-1">
+                                        <i class="bi bi-building me-1"></i>
+                                        {{ annonce.faculte.nom }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Titre -->
+                            <h5 class="card-title mb-3">
+                                {{ annonce.titre }}
+                                {% if annonce.est_expiree %}
+                                <span class="badge bg-secondary ms-2">
+                                    <i class="bi bi-clock-history me-1"></i>
+                                    Expirée
+                                </span>
+                                {% endif %}
+                            </h5>
+                            
+                            <!-- Contenu (extrait) -->
+                            <div class="card-text mb-3">
+                                {{ annonce.contenu|truncatewords:50|linebreaks }}
+                            </div>
+                            
+                            <!-- Pied de l'annonce -->
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                <div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person-circle me-1"></i>
+                                        {% if annonce.auteur %}
+                                            {{ annonce.auteur.get_full_name }}
+                                        {% else %}
+                                            Administration
+                                        {% endif %}
+                                        • {{ annonce.date_publication|date:"d/m/Y à H:i" }}
+                                    </small>
+                                    
+                                    {% if annonce.date_expiration %}
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar-x me-1"></i>
+                                        Expire le {{ annonce.date_expiration|date:"d/m/Y" }}
+                                        {% if annonce.duree_restante %}
+                                        ({{ annonce.duree_restante }})
+                                        {% endif %}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#annonceModal{{ annonce.id }}">
+                                        <i class="bi bi-arrows-angle-expand me-1"></i>
+                                        Lire plus
+                                    </button>
+                                    
+                                    {% if annonce.fichier_joint %}
+                                    <a href="{{ annonce.fichier_joint.url }}" 
+                                       class="btn btn-sm btn-outline-secondary" 
+                                       target="_blank"
+                                       title="Télécharger le fichier joint">
+                                        <i class="bi bi-paperclip"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal pour lire l'annonce complète -->
+                <div class="modal fade" id="annonceModal{{ annonce.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <div>
+                                    <h5 class="modal-title">
+                                        {{ annonce.titre }}
+                                        <span class="badge bg-{{ annonce.get_badge_color }} ms-2">
+                                            {{ annonce.get_type_annonce_display }}
+                                        </span>
+                                    </h5>
+                                    <small class="text-muted">
+                                        Publié le {{ annonce.date_publication|date:"d/m/Y à H:i" }}
+                                        {% if annonce.faculte %}
+                                        • {{ annonce.faculte.nom }}
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body modal-annonce-content">
+                                {% if annonce.image %}
+                                <div class="text-center mb-4">
+                                    <img src="{{ annonce.image.url }}" 
+                                         alt="{{ annonce.titre }}" 
+                                         class="img-fluid rounded" 
+                                         style="max-height: 300px;">
+                                </div>
+                                {% endif %}
+                                
+                                <div class="annonce-content">
+                                    {{ annonce.contenu|linebreaks }}
+                                </div>
+                                
+                                {% if annonce.fichier_joint %}
+                                <div class="mt-4 pt-3 border-top">
+                                    <h6><i class="bi bi-paperclip me-2"></i>Fichier joint</h6>
+                                    <a href="{{ annonce.fichier_joint.url }}" 
+                                       class="btn btn-outline-primary" 
+                                       target="_blank">
+                                        <i class="bi bi-download me-2"></i>
+                                        Télécharger {{ annonce.fichier_joint.name|slice:"-20:" }}
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="modal-footer">
+                                <div class="w-100">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <small class="text-muted">
+                                                <i class="bi bi-person-circle me-1"></i>
+                                                {% if annonce.auteur %}
+                                                    Publié par {{ annonce.auteur.get_full_name }}
+                                                {% else %}
+                                                    Administration
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted">
+                                                Destinataires : 
+                                                {% if annonce.destinataire_tous %}
+                                                <span class="badge bg-secondary ms-1">Tous</span>
+                                                {% endif %}
+                                                {% if annonce.destinataire_etudiants %}
+                                                <span class="badge bg-primary ms-1">Étudiants</span>
+                                                {% endif %}
+                                                {% if annonce.destinataire_professeurs %}
+                                                <span class="badge bg-success ms-1">Professeurs</span>
+                                                {% endif %}
+                                                {% if annonce.destinataire_admins %}
+                                                <span class="badge bg-dark ms-1">Administrateurs</span>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        {% else %}
+            <!-- État vide -->
+            <div class="empty-annonces">
+                <div class="mb-4">
+                    <i class="bi bi-bell-slash-fill" style="font-size: 4rem; color: #dee2e6;"></i>
+                </div>
+                <h4 class="mb-3">Aucune annonce pour le moment</h4>
+                <p class="text-muted mb-4">
+                    {% if user.role == 'student' %}
+                    Vous n'avez pas encore d'annonces qui vous concernent. 
+                    Les annonces importantes de votre faculté apparaîtront ici.
+                    {% elif user.role == 'prof' %}
+                    Aucune annonce n'est actuellement destinée aux professeurs.
+                    {% else %}
+                    Aucune annonce disponible pour votre profil.
+                    {% endif %}
+                </p>
+                <div class="alert alert-info w-50 mx-auto">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <small>
+                        Vous recevrez des notifications lorsqu'une nouvelle annonce vous concernera.
+                        Les annonces sont filtrées selon votre rôle et votre faculté.
+                    </small>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filtrage par type
+        const filterButtons = document.querySelectorAll('.filter-type');
+        const annonceItems = document.querySelectorAll('.annonce-item');
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Mettre à jour les boutons actifs
+                filterButtons.forEach(btn => btn.classList.remove('active', 'btn-primary'));
+                filterButtons.forEach(btn => btn.classList.add('btn-outline-secondary'));
+                
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('active', 'btn-primary');
+                
+                const filterType = this.dataset.type;
+                
+                // Filtrer les annonces
+                annonceItems.forEach(item => {
+                    if (filterType === 'all' || item.dataset.type === filterType) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+        
+        // Filtre "Importantes seulement"
+        document.getElementById('filterImportant').addEventListener('click', function(e) {
+            e.preventDefault();
+            annonceItems.forEach(item => {
+                if (item.dataset.important === 'true') {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Filtre "Aujourd'hui"
+        document.getElementById('filterToday').addEventListener('click', function(e) {
+            e.preventDefault();
+            const today = new Date().toISOString().split('T')[0];
+            annonceItems.forEach(item => {
+                if (item.dataset.date === today) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Effacer les filtres
+        document.getElementById('clearFilters').addEventListener('click', function(e) {
+            e.preventDefault();
+            annonceItems.forEach(item => {
+                item.style.display = 'block';
+            });
+            filterButtons.forEach(btn => {
+                btn.classList.remove('active', 'btn-primary');
+                btn.classList.add('btn-outline-secondary');
+                if (btn.dataset.type === 'all') {
+                    btn.classList.add('active', 'btn-primary');
+                }
+            });
+        });
+        
+        // Recherche simple
+        const searchInput = document.getElementById('searchAnnonces');
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            annonceItems.forEach(item => {
+                const card = item.querySelector('.card');
+                const text = card.textContent.toLowerCase();
+                
+                if (text.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // Marquer comme lues (optionnel - pour tracking)
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.addEventListener('shown.bs.modal', function() {
+                const annonceId = this.id.replace('annonceModal', '');
+                // Ici vous pourriez envoyer une requête AJAX pour marquer comme lue
+                console.log('Annonce lue:', annonceId);
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -825,10 +825,10 @@ def consulter_notes_etudiant(request):
         moyenne_generale = None
         if moy_s1 is not None and moy_s2 is not None:
             moyenne_generale = round((moy_s1 + moy_s2) / 2, 2)
-        elif moy_s2 is not None:
-            moyenne_generale = moy_s2
-        elif moy_s1 is not None:
-            moyenne_generale = moy_s1
+        # elif moy_s2 is not None:
+        #     moyenne_generale = moy_s2
+        # elif moy_s1 is not None:
+        #     moyenne_generale = moy_s1
         
         moyennes_par_annee[annee] = {
             'S1': moy_s1,

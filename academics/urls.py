@@ -35,10 +35,7 @@ urlpatterns = [
 
     path('cours/modal/', views.cours_par_faculte_modal, name='cours_modal'),
     path('annonce/modal/', views.annonce_detail_modal, name='annonce_modal'),
-
-
  
-
 
     # ✅ NOUVELLES URLs pour les annonces (AJOUTEZ CES LIGNES)
     # Liste et gestion des annonces
@@ -57,6 +54,8 @@ urlpatterns = [
     
     # Export/Import (optionnel)
     path('annonces/export/', views.export_annonces, name='export_annonces'),
+
+    path('mes-annonces/', views.mes_annonces, name='mes_annonces'),
 ]
 
 

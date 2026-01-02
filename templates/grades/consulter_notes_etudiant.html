@@ -338,48 +338,112 @@
             </div>
 
             <!-- Moyennes détaillées -->
-            {% if moyenne_generale %}
-            <div class="card border-{% if moyenne_generale >= 70 %}success{% else %}warning{% endif %} shadow-sm">
-                <div class="card-header bg-{% if moyenne_generale >= 70 %}success{% else %}warning{% endif %} text-white">
+                      <!-- Moyennes détaillées - TOUJOURS afficher S1 et S2 si disponibles -->
+            <div class="card border-info shadow-sm">
+                <div class="card-header bg-info text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-calculator"></i> Calcul de la moyenne générale
+                        <i class="bi bi-calculator"></i> Détail des moyennes
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
+                        <!-- S1 -->
                         <div class="col-md-4">
-                            <div class="display-4 fw-bold text-info">
-                                {{ moyenne_s1|default:"--" }}
+                            <div class="display-4 fw-bold 
+                                {% if moyenne_s1 %}text-info{% else %}text-secondary{% endif %}">
+                                {{ moyenne_s1|default:"--"|floatformat:1 }}
                             </div>
                             <small class="text-muted">Moyenne S1</small>
+                            {% if moyenne_s1 %}
+                            <div class="mt-1">
+                                <span class="badge bg-{% if moyenne_s1 >= 70 %}success{% else %}warning{% endif %}">
+                                    {% if moyenne_s1 >= 70 %}Validé{% else %}En risque{% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
                         </div>
+                        
+                        <!-- S2 -->
                         <div class="col-md-4">
-                            <div class="display-4 fw-bold text-warning">
-                                {{ moyenne_s2|default:"--" }}
+                            <div class="display-4 fw-bold 
+                                {% if moyenne_s2 %}text-warning{% else %}text-secondary{% endif %}">
+                                {{ moyenne_s2|default:"--"|floatformat:1 }}
                             </div>
                             <small class="text-muted">Moyenne S2</small>
+                            {% if moyenne_s2 %}
+                            <div class="mt-1">
+                                <span class="badge bg-{% if moyenne_s2 >= 70 %}success{% else %}warning{% endif %}">
+                                    {% if moyenne_s2 >= 70 %}Validé{% else %}En risque{% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
                         </div>
+                        
+                        <!-- Moyenne générale - SEULEMENT si complète -->
                         <div class="col-md-4">
-                            <div class="display-4 fw-bold {% if moyenne_generale >= 70 %}text-success{% else %}text-danger{% endif %}">
-                                {{ moyenne_generale|floatformat:2 }}
+                            {% if moyenne_generale %}
+                            <div class="display-4 fw-bold 
+                                {% if moyenne_generale >= 70 %}text-success{% else %}text-danger{% endif %}">
+                                {{ moyenne_generale|floatformat:1 }}
                             </div>
                             <small class="text-muted">Moyenne générale</small>
+                            <div class="mt-1">
+                                <span class="badge bg-{% if moyenne_generale >= 70 %}success{% else %}danger{% endif %}">
+                                    {% if moyenne_generale >= 70 %}Admis{% else %}Redoublement{% endif %}
+                                </span>
+                            </div>
+                            {% else %}
+                            <div class="display-4 fw-bold text-secondary">
+                                --
+                            </div>
+                            <small class="text-muted">Moyenne annuelle</small>
+                            <div class="mt-1">
+                                <span class="badge bg-info">
+                                    {% if moyenne_s1 or moyenne_s2 %}
+                                    En attente
+                                    {% else %}
+                                    Non disponible
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
+                    
+                    <!-- Message d'information -->
+                    {% if not moyenne_generale %}
+                    <div class="text-center mt-4">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Information :</strong>
+                            {% if moyenne_s1 and not moyenne_s2 %}
+                            Vous avez une moyenne de S1. La moyenne annuelle sera calculée lorsque les notes de S2 seront disponibles.
+                            {% elif not moyenne_s1 and moyenne_s2 %}
+                            Vous avez une moyenne de S2. La moyenne annuelle sera calculée lorsque les notes de S1 seront disponibles.
+                            {% elif moyenne_s1 and moyenne_s2 %}
+                            <!-- Ce cas ne devrait pas arriver avec la correction vue -->
+                            Les deux semestres sont disponibles mais la moyenne générale n'est pas calculée.
+                            {% else %}
+                            Aucune note disponible pour l'année en cours.
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Afficher la décision finale si moyenne générale disponible -->
                     <div class="text-center mt-3">
                         <div class="alert alert-{% if moyenne_generale >= 70 %}success{% else %}danger{% endif %}">
                             <h5 class="mb-0">
                                 {% if moyenne_generale >= 70 %}
-                                <i class="bi bi-check-circle-fill"></i> ADMIS - Moyenne ≥ 70/100
+                                <i class="bi bi-check-circle-fill"></i> ADMIS - Moyenne annuelle ≥ 70/100
                                 {% else %}
-                                <i class="bi bi-x-circle-fill"></i> REDOUBLEMENT - Moyenne < 70/100
+                                <i class="bi bi-x-circle-fill"></i> REDOUBLEMENT - Moyenne annuelle < 70/100
                                 {% endif %}
                             </h5>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
             </div>
-            {% endif %}
         </div>
 
         <!-- Onglet Historique -->

@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block title %}Aide & Manuel d'utilisation - SG-UJEPH{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- En-tête principal -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="mb-3">
+                <i class="bi bi-question-circle-fill text-primary"></i>
+                Aide & Manuel d'utilisation
+            </h2>
+            <p class="lead text-muted">
+                Bienvenue dans le centre d'aide du Système de Gestion UJEPH (SG-UJEPH)
+            </p>
+            <p class="text-muted">
+                Cette section vous guide dans l'utilisation du système selon votre rôle.
+                Pour toute assistance supplémentaire, contactez le support technique.
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Section générale pour tous les utilisateurs -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        Présentation générale du système
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary">Fonctionnalités de base</h6>
+                    <ul class="mb-3">
+                        <li><strong>Connexion sécurisée :</strong> Authentification par identifiant et mot de passe</li>
+                        <li><strong>Accès contrôlé :</strong> Interface adaptée à votre rôle (Admin, Professeur, Étudiant)</li>
+                        <li><strong>Sécurité :</strong> Déconnexion automatique après 5 minutes d'inactivité</li>
+                        <li hidden><strong>Navigation :</strong> Menu latéral ou supérieur selon votre profil</li>
+                    </ul>
+                    
+                    <h6 class="text-primary">Premiers pas</h6>
+                    <ol>
+                        <li>Connectez-vous avec vos identifiants fournis</li>
+                        <li>Consultez le tableau de bord pour un aperçu rapide</li>
+                        <li>Utilisez le menu pour accéder aux différentes sections</li>
+                        <li hidden>N'hésitez pas à utiliser le bouton "Aide" contextuel <i class="bi bi-question-circle"></i> dans chaque module</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Sections spécifiques selon le rôle -->
+            {% if user.role == 'admin' %}
+            <div class="card shadow-sm mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-check"></i>
+                        Guide Administrateur
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Accès complet :</strong> Vous avez tous les privilèges sur le système.
+                    </div>
+                    
+                    <h6>Gestion des utilisateurs</h6>
+                    <ul class="mb-3">
+                        <li>Création, modification et suppression des comptes</li>
+                        <li>Attribution des rôles et permissions</li>
+                        <li>Réinitialisation des mots de passe</li>
+                    </ul>
+                    
+                    <h6>Gestion académique</h6>
+                    <ul class="mb-3">
+                        <li>Création et gestion des facultés, départements</li>
+                        <li>Gestion des cours et des programmes</li>
+                        <li>Assignation des professeurs aux cours</li>
+                    </ul>
+                    
+                    <h6>Supervision du système</h6>
+                    <ul>
+                        <li>Validation et publication des notes finales</li>
+                        <li>Consultation du journal d'audit (historique des actions)</li>
+                        <li>Gestion des périodes académiques (semestres, années)</li>
+                        <li>Configuration des paramètres système</li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.role == 'prof' %}
+            <div class="card shadow-sm mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge"></i>
+                        Guide Professeur
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Mes cours</h6>
+                    <ul class="mb-3">
+                        <li>Consultez la liste des cours qui vous sont assignés</li>
+                        <li>Cliquez sur Saisir notes pour accédes à la liste des étudiants par cours</li>
+                        <li>Cliquez sur soumettre pour soumettre définitivement les notes saisies pour le cours en Question</li>
+                    </ul>
+                    
+                    <h6>Saisie des notes</h6>
+                    <ul class="mb-3">
+                        <li>Saisissez les notes pour chaque évaluation</li> 
+                        <li>Enregistrez les données saisies comme brouillon pour les conserver e pouvoir les modifier</li>
+                        <li>Entrez une note pour chaque étudiant avant la soumission</li>
+                        <li>Soumettez les notes pour validation</li> 
+                    </ul>
+                    
+                    <h6>Suivi</h6>
+                    <ul>
+                        <li>Consultez l'état des notes de vos cours</li>
+                        <li>Visualisez les statistiques de vos cours assignés</li>
+                        <li>Communiquez avec l'administration si nécessaire</li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.role == 'student' %}
+            <div class="card shadow-sm mb-4 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-circle"></i>
+                        Guide Étudiant
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Mes informations</h6>
+                    <ul class="mb-3">
+                        <li>Consultez votre profil et informations personnelles</li>
+                        <li>Vérifiez votre programme académique</li>
+                        <li>Consultez votre emploi du temps</li>
+                    </ul>
+                    
+                    <h6>Résultats académiques</h6>
+                    <ul class="mb-3">
+                        <li>Consultez vos notes par semestre</li>
+                        <li>Visualisez votre moyenne générale</li>
+                        <li>Téléchargez vos relevés de notes (une fois publiés)</li>
+                    </ul>
+                    
+                    <h6>Communication</h6>
+                    <ul>
+                        <li>Accédez aux annonces académiques importantes</li>
+                        <li>Consultez les informations sur vos professeurs</li>
+                        <li>Recevez les notifications du système</li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar avec informations supplémentaires -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-shield-exclamation"></i>
+                        Sécurité & Bonnes pratiques
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-key"></i>
+                        <strong>Protégez vos identifiants</strong>
+                        <p class="small mb-0">Ne partagez jamais votre mot de passe avec qui que ce soit.</p>
+                    </div>
+                    
+                    <ul class="small">
+                        <li>Déconnectez-vous après chaque session</li>
+                        <li>Évitez d'utiliser le système sur des ordinateurs publics</li>
+                        <li>Changez votre mot de passe régulièrement</li>
+                        <li>Vérifiez toujours l'URL du site (https://)</li>
+                        <li>Signalez toute activité suspecte immédiatement</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-telephone"></i>
+                        Support technique
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small">
+                        <strong>En cas de problème :</strong>
+                    </p>
+                    <ul class="small">
+                        <li><i class="bi bi-envelope"></i> Email : info@ujeph.edu.ht</li>
+                        <li><i class="bi bi-telephone"></i> Téléphones : +509 3864 3657 / +509 4207 7766</li>
+                        <li><i class="bi bi-clock"></i> Horaires : 8h-17h, Lundi-Vendredi</li>
+                    </ul>
+                    <p class="small text-muted mt-2">
+                        Pour les problèmes de connexion, contactez directement
+                        l'administrateur système de votre faculté.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ rapide -->
+    <div class="mt-4 pt-3 border-top">
+        <h5><i class="bi bi-chat-question"></i> Questions fréquentes</h5>
+        <div class="accordion" id="faqAccordion">
+            <div class="accordion-item">
+                <h6 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                        J'ai oublié mon mot de passe
+                    </button>
+                </h6>
+                <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body small">
+                        Vous pouvez vous même le réinitialiser grâce à votre adresse e-mail
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h6 class="accordion-header">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                        Mes notes ne s'affichent pas
+                    </button>
+                </h6>
+                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body small">
+                        Les notes ne sont visibles qu'après validation par l'administration. Vérifiez aussi que vous consultez le bon semestre.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
