@@ -1786,144 +1786,151 @@ def creer_professeur(request):
 
 @login_required
 def dashboard(request):
-    user = request.user
+    try:
+        user = request.user
 
-    is_django_superuser = user.is_superuser
-    
-    if user.role == User.Role.ADMIN or is_django_superuser:
-        from academics.models import Faculte, Cours
-        from grades.models import Note
-        from django.utils import timezone
-        from datetime import timedelta
-        from django.db.models import Count, Q
+        is_django_superuser = user.is_superuser
         
-        # Statistiques de base
-        stats = {
-            'etudiants': Etudiant.objects.count(),
-            'professeurs': Professeur.objects.count(),
-            'facultes': Faculte.objects.count(),
-            'cours': Cours.objects.count(),
-            'admins': Admin.objects.count(),
-        }
-        
-        # Données supplémentaires pour le dashboard
-        notes_soumises = Note.objects.filter(statut='soumise')
-        notes_soumises_count = notes_soumises.count() 
-
-        # STATISTIQUES SYSTÈME POUR ADMIN SEULEMENT
-        maintenant = timezone.now()
-        date_limite_24h = maintenant - timedelta(hours=24)
-        date_limite_30j = maintenant - timedelta(days=30)
- 
-        
-        # DEBUG: Afficher les dates pour vérifier
-        print(f"DEBUG - Maintenant: {maintenant}")
-        print(f"DEBUG - Limite 24h: {date_limite_24h}")
-
-        
-        # Connexions récentes (dernières 24h)
-        connexions_recentes = User.objects.filter(
-            last_login__gte=date_limite_24h
-        ).count()
-        print(f'le voici: {connexions_recentes}')
-        
-        
-        # Comptes actifs (connectés dans les 30 derniers jours)
-        comptes_actifs = User.objects.filter(
-            last_login__gte=date_limite_30j
-        ).count()
-        
-        # Comptes inactifs (pas connectés depuis 30+ jours)
-        comptes_inactifs = User.objects.filter(
-            Q(last_login__lt=date_limite_30j) | Q(last_login__isnull=True)
-        ).count()
-        
-        # AJOUTEZ CE CALCUL POUR LES COMPTES DÉSACTIVÉS
-        comptes_desactives = User.objects.filter(
-            is_active=False
-        ).count()
-        # Total utilisateurs
-        total_utilisateurs = User.objects.count()
-        
-        # Pourcentage d'activité
-        pourcentage_actif = (comptes_actifs / total_utilisateurs * 100) if total_utilisateurs > 0 else 0
-        
-        context = {
-            'role': 'admin',
-            'stats': stats,
-            'notes_soumises': notes_soumises, 
-            'notes_soumises_count': notes_soumises_count,
-            'connexions_recentes': connexions_recentes,
-            'comptes_actifs': comptes_actifs,
-            'comptes_inactifs': comptes_inactifs,
-            'comptes_desactives': comptes_desactives,
-            'total_utilisateurs': total_utilisateurs,
-            'pourcentage_actif': round(pourcentage_actif, 1),
-            'is_django_superuser': is_django_superuser,
-        }
-    
-    elif user.role == User.Role.PROFESSEUR:
-        from academics.models import Cours
-        from django.db.models import Count, Exists, OuterRef, Subquery
-        from grades.models import InscriptionCours
-        
-        # OPTION A: Annotation avec COUNT des inscriptions
-        cours_assignes = Cours.objects.filter(
-            professeur=user
-        ).annotate(
-            nb_etudiants_inscrits=Count('inscriptions', distinct=True)
-        ).select_related('faculte')
-        
-        # OPTION B: Annotation avec SUBQUERY (plus performant pour les grandes BDD)
-        cours_assignes = Cours.objects.filter(
-            professeur=user
-        ).annotate(
-            nb_inscrits=Subquery(
-                InscriptionCours.objects.filter(
-                    cours=OuterRef('pk')
-                ).values('cours')
-                .annotate(count=Count('*'))
-                .values('count')[:1]
-            )
-        ).select_related('faculte')
-        
-        # Pour chaque cours, afficher aussi le nombre d'étudiants concernés
-        for cours in cours_assignes:
-            cours.nb_concernes = cours.etudiants_concernes().count()
-            cours.nb_inscrits_reel = cours.inscriptions.count()
-        
-        context = {
-            'role': 'professeur',
-            'cours_assignes': cours_assignes
-        }
-    
-    elif user.role == User.Role.ETUDIANT:
-        from grades.models import Note, InscriptionCours
-        from academics.models import Cours
-
-        if hasattr(user, 'etudiant'):
-            notes_recentes = Note.objects.filter(
-                etudiant=user.etudiant,
-                statut='publiée'
-            )[:5]
-
-            cours_inscrits = Cours.objects.filter(
-                inscriptions__etudiant=user.etudiant
-            ).distinct()
-
-            context = {
-                'role': 'etudiant',
-                'etudiant': user.etudiant,
-                'notes_recentes': notes_recentes,
-                'cours_inscrits': cours_inscrits
+        if user.role == User.Role.ADMIN or is_django_superuser:
+            from academics.models import Faculte, Cours
+            from grades.models import Note
+            from django.utils import timezone
+            from datetime import timedelta
+            from django.db.models import Count, Q
+            
+            # Statistiques de base
+            stats = {
+                'etudiants': Etudiant.objects.count(),
+                'professeurs': Professeur.objects.count(),
+                'facultes': Faculte.objects.count(),
+                'cours': Cours.objects.count(),
+                'admins': Admin.objects.count(),
             }
+            
+            # Données supplémentaires pour le dashboard
+            notes_soumises = Note.objects.filter(statut='soumise')
+            notes_soumises_count = notes_soumises.count() 
+
+            # STATISTIQUES SYSTÈME POUR ADMIN SEULEMENT
+            maintenant = timezone.now()
+            date_limite_24h = maintenant - timedelta(hours=24)
+            date_limite_30j = maintenant - timedelta(days=30)
+    
+            
+            # DEBUG: Afficher les dates pour vérifier
+            print(f"DEBUG - Maintenant: {maintenant}")
+            print(f"DEBUG - Limite 24h: {date_limite_24h}")
+
+            
+            # Connexions récentes (dernières 24h)
+            connexions_recentes = User.objects.filter(
+                last_login__gte=date_limite_24h
+            ).count()
+            print(f'le voici: {connexions_recentes}')
+            
+            
+            # Comptes actifs (connectés dans les 30 derniers jours)
+            comptes_actifs = User.objects.filter(
+                last_login__gte=date_limite_30j
+            ).count()
+            
+            # Comptes inactifs (pas connectés depuis 30+ jours)
+            comptes_inactifs = User.objects.filter(
+                Q(last_login__lt=date_limite_30j) | Q(last_login__isnull=True)
+            ).count()
+            
+            # AJOUTEZ CE CALCUL POUR LES COMPTES DÉSACTIVÉS
+            comptes_desactives = User.objects.filter(
+                is_active=False
+            ).count()
+            # Total utilisateurs
+            total_utilisateurs = User.objects.count()
+            
+            # Pourcentage d'activité
+            pourcentage_actif = (comptes_actifs / total_utilisateurs * 100) if total_utilisateurs > 0 else 0
+            
+            context = {
+                'role': 'admin',
+                'stats': stats,
+                'notes_soumises': notes_soumises, 
+                'notes_soumises_count': notes_soumises_count,
+                'connexions_recentes': connexions_recentes,
+                'comptes_actifs': comptes_actifs,
+                'comptes_inactifs': comptes_inactifs,
+                'comptes_desactives': comptes_desactives,
+                'total_utilisateurs': total_utilisateurs,
+                'pourcentage_actif': round(pourcentage_actif, 1),
+                'is_django_superuser': is_django_superuser,
+            }
+        
+        elif user.role == User.Role.PROFESSEUR:
+            from academics.models import Cours
+            from django.db.models import Count, Exists, OuterRef, Subquery
+            from grades.models import InscriptionCours
+            
+            # OPTION A: Annotation avec COUNT des inscriptions
+            cours_assignes = Cours.objects.filter(
+                professeur=user
+            ).annotate(
+                nb_etudiants_inscrits=Count('inscriptions', distinct=True)
+            ).select_related('faculte')
+            
+            # OPTION B: Annotation avec SUBQUERY (plus performant pour les grandes BDD)
+            cours_assignes = Cours.objects.filter(
+                professeur=user
+            ).annotate(
+                nb_inscrits=Subquery(
+                    InscriptionCours.objects.filter(
+                        cours=OuterRef('pk')
+                    ).values('cours')
+                    .annotate(count=Count('*'))
+                    .values('count')[:1]
+                )
+            ).select_related('faculte')
+            
+            # Pour chaque cours, afficher aussi le nombre d'étudiants concernés
+            for cours in cours_assignes:
+                cours.nb_concernes = cours.etudiants_concernes().count()
+                cours.nb_inscrits_reel = cours.inscriptions.count()
+            
+            context = {
+                'role': 'professeur',
+                'cours_assignes': cours_assignes
+            }
+        
+        elif user.role == User.Role.ETUDIANT:
+            from grades.models import Note, InscriptionCours
+            from academics.models import Cours
+
+            if hasattr(user, 'etudiant'):
+                notes_recentes = Note.objects.filter(
+                    etudiant=user.etudiant,
+                    statut='publiée'
+                )[:5]
+
+                cours_inscrits = Cours.objects.filter(
+                    inscriptions__etudiant=user.etudiant
+                ).distinct()
+
+                context = {
+                    'role': 'etudiant',
+                    'etudiant': user.etudiant,
+                    'notes_recentes': notes_recentes,
+                    'cours_inscrits': cours_inscrits
+                }
+            else:
+                context = {'role': 'etudiant', 'etudiant': None}
+        
         else:
-            context = {'role': 'etudiant', 'etudiant': None}
-    
-    else:
-        context = {'role': 'unknown'}
-    
-    return render(request, 'accounts/dashboard.html', context)
+            context = {'role': 'unknown'}
+        
+        return render(request, 'accounts/dashboard.html', context)
+    except Exception as e:
+        import traceback
+        print(f"ERREUR DASHBOARD: {str(e)}")
+        print(traceback.format_exc())
+        # En production, vous pourriez logger cette erreur
+        return HttpResponse(f"Erreur interne: {str(e)}", status=500)
 
 
 # ✅ CORRECTION : UTILISER LES PERMISSIONS GRANULAIRES
