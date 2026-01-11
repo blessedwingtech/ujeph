@@ -162,9 +162,9 @@
                                 <i class="bi bi-pencil-square me-2"></i>
                                 <span class="d-none d-md-inline">Notes à valider</span>
                                 <span class="d-md-none">Notes</span>
-                                {% if notes_soumises.count > 0 %}
+                                {% if notes_soumises_count > 0 %}
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    {{ notes_soumises.count }}
+                                    {{ notes_soumises_count }}
                                     <span class="visually-hidden">notes à valider</span>
                                 </span>
                                 {% endif %}
@@ -187,7 +187,7 @@
 
         <!-- Panneau d'alertes et statistiques -->
         <div class="row g-3 g-md-4">
-            {% if notes_soumises.count > 0 %}
+            {% if notes_soumises_count > 0 %}
             <div class="col-md-6">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-warning bg-opacity-10 border-0">
@@ -212,7 +212,7 @@
             </div>
             {% endif %}
 
-            <div class="col-md-{% if notes_soumises.count > 0 %}6{% else %}12{% endif %}">
+            <div class="col-md-{% if notes_soumises_count > 0 %}6{% else %}12{% endif %}">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-white border-0">
                         <h5 class="mb-0">
@@ -375,7 +375,7 @@
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <small class="text-muted">
                                                     <i class="bi bi-people me-1"></i>
-                                                    {{ cours.nombre_etudiants }} étudiant(s)
+                                                    <!-- {{ cours.nombre_etudiants }} --> {{ cours.nb_inscrits_reel }} étudiant(s)
                                                 </small>
                                                 <a href="{% url 'grades:saisie_notes' cours.id %}" 
                                                    class="btn btn-primary btn-sm d-flex align-items-center">

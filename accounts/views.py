@@ -1807,7 +1807,8 @@ def dashboard(request):
         }
         
         # Données supplémentaires pour le dashboard
-        notes_soumises = Note.objects.filter(statut='soumise') 
+        notes_soumises = Note.objects.filter(statut='soumise')
+        notes_soumises_count = notes_soumises.count() 
 
         # STATISTIQUES SYSTÈME POUR ADMIN SEULEMENT
         maintenant = timezone.now()
@@ -1851,6 +1852,7 @@ def dashboard(request):
             'role': 'admin',
             'stats': stats,
             'notes_soumises': notes_soumises, 
+            'notes_soumises_count': notes_soumises_count,
             'connexions_recentes': connexions_recentes,
             'comptes_actifs': comptes_actifs,
             'comptes_inactifs': comptes_inactifs,
