@@ -15,7 +15,8 @@ class FaculteForm(forms.ModelForm):
         widgets = {
             'code': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ex: INFO'
+                'placeholder': 'INFO-x (max 10 caractères)',
+                'maxlength': 10
             }),
             'nom': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -58,12 +59,12 @@ class CoursForm(forms.ModelForm):
         model = Cours
         fields = ['code', 'intitule', 'niveau', 'semestre', 'faculte', 'professeur']
         widgets = {
-            'code': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
-            'intitule': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'code': forms.TextInput(attrs={'class': 'form-control','placeholder': 'STAT-x', 'required': True}),
+            'intitule': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom du cours', 'required': True}),
             'niveau': forms.Select(attrs={'class': 'form-select', 'required': True}),
             'semestre': forms.Select(attrs={'class': 'form-select', 'required': True}), 
             'faculte': forms.Select(attrs={'class': 'form-select', 'required': True}),
-            'professeur': forms.Select(attrs={'class': 'form-select', 'required': True}),
+            'professeur': forms.Select(attrs={'class': 'form-select', 'required': True}), 
         }
         labels = {
             'intitule': 'Intitulé du cours',

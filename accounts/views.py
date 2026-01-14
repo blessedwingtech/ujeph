@@ -2559,6 +2559,62 @@ def voir_profil_utilisateur(request, user_id):
 
     return render(request, 'accounts/profil_utilisateur_admin.html', context)
 
+#vue pour etudiant
+# accounts/views.py
+@login_required
+def voir_professeur_cours(request, user_id):
+    """
+    Vue pour qu'un étudiant voie le profil d'un professeur qui enseigne son cours
+    Accepte user_id (ID du User)
+    """
+    # Vérifier que l'utilisateur est étudiant
+    if request.user.role != User.Role.ETUDIANT or not hasattr(request.user, 'etudiant'):
+        messages.error(request, "❌ Accès réservé aux étudiants")
+        return redirect('accounts:dashboard')
+    
+    # Récupérer le User du professeur
+    professeur_user = get_object_or_404(User, id=user_id)
+    
+    # Vérifier que c'est bien un professeur
+    if professeur_user.role != User.Role.PROFESSEUR:
+        messages.error(request, "❌ Cet utilisateur n'est pas un professeur")
+        return redirect('academics:mes_cours_etudiant')
+    
+    # Récupérer le profil Professeur
+    try:
+        professeur = Professeur.objects.get(user=professeur_user)
+    except Professeur.DoesNotExist:
+        messages.error(request, "❌ Profil professeur non trouvé")
+        return redirect('academics:mes_cours_etudiant')
+    
+    # Vérifier que l'étudiant suit un cours de ce professeur
+    etudiant = request.user.etudiant
+    
+    from academics.models import Cours
+    
+    cours_du_professeur = Cours.objects.filter(
+        professeur=professeur_user,
+        inscriptions__etudiant=etudiant
+    ).exists()
+    
+    if not cours_du_professeur:
+        messages.error(request, "❌ Vous ne suivez aucun cours de ce professeur")
+        return redirect('academics:mes_cours_etudiant')
+    
+    # Récupérer les cours communs
+    cours_communs = Cours.objects.filter(
+        professeur=professeur_user,
+        inscriptions__etudiant=etudiant
+    ).select_related('faculte')
+    
+    context = {
+        'professeur': professeur,
+        'user_prof': professeur_user,
+        'cours_communs': cours_communs,
+        'is_student_view': True,
+    }
+    
+    return render(request, 'accounts/profil_professeur_etudiant.html', context)   
 
 
 #Pour auditer

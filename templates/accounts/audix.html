@@ -1,0 +1,703 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Audit du système{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Titre et statistiques améliorés -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                    <i class="bi bi-clipboard-data text-primary fs-2"></i>
+                </div>
+                <div>
+                    <h1 class="h2 mb-1">Journal d'audit du système</h1>
+                    <p class="text-muted mb-0">Suivi de toutes les actions critiques effectuées dans le système</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="card border-0 bg-primary bg-opacity-10">
+                        <div class="card-body py-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary text-white rounded-circle p-2 me-3">
+                                    <i class="bi bi-list-check fs-5"></i>
+                                </div>
+                                <div>
+                                    <div class="fs-3 fw-bold text-primary">{{ total_actions }}</div>
+                                    <div class="small text-muted">Total actions</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card border-0 bg-success bg-opacity-10">
+                        <div class="card-body py-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success text-white rounded-circle p-2 me-3">
+                                    <i class="bi bi-calendar-day fs-5"></i>
+                                </div>
+                                <div>
+                                    <div class="fs-3 fw-bold text-success">{{ actions_today }}</div>
+                                    <div class="small text-muted">Aujourd'hui</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres améliorés -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-funnel me-2 text-primary"></i>Filtres de recherche</h5>
+                <button class="btn btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        <div class="collapse show" id="filterCollapse">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium small">Utilisateur</label>
+                        <select name="user" class="form-select border-secondary-subtle">
+                            <option value="">Tous les utilisateurs</option>
+                            {% for user in users_list %}
+                                <option value="{{ user }}" {% if filters.user == user %}selected{% endif %}>{{ user }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium small">Type d'action</label>
+                        <select name="action" class="form-select border-secondary-subtle">
+                            <option value="">Toutes les actions</option>
+                            {% for code, label in actions_choices %}
+                                <option value="{{ code }}" {% if filters.action == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium small">Objet</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-secondary-subtle">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" name="objet" class="form-control border-secondary-subtle" 
+                                   placeholder="Rechercher un objet..." value="{{ filters.objet }}">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium small">Faculté</label>
+                        <select name="faculte" class="form-select border-secondary-subtle">
+                            <option value="">Toutes les facultés</option>
+                            {% for fac in facultes_list %}
+                                <option value="{{ fac }}" {% if filters.faculte == fac %}selected{% endif %}>{{ fac }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium small">Période rapide</label>
+                        <select name="periode" class="form-select border-secondary-subtle">
+                            <option value="">Toute période</option>
+                            <option value="today" {% if filters.periode == 'today' %}selected{% endif %}>Aujourd'hui</option>
+                            <option value="yesterday" {% if filters.periode == 'yesterday' %}selected{% endif %}>Hier</option>
+                            <option value="week" {% if filters.periode == 'week' %}selected{% endif %}>7 derniers jours</option>
+                            <option value="month" {% if filters.periode == 'month' %}selected{% endif %}>30 derniers jours</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium small">Date début</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-secondary-subtle">
+                                <i class="bi bi-calendar"></i>
+                            </span>
+                            <input type="date" name="date_debut" class="form-control border-secondary-subtle" 
+                                   value="{{ filters.date_debut|default:'' }}" max="{{ today }}">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium small">Date fin</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-secondary-subtle">
+                                <i class="bi bi-calendar"></i>
+                            </span>
+                            <input type="date" name="date_fin" class="form-control border-secondary-subtle" 
+                                   value="{{ filters.date_fin|default:'' }}" max="{{ today }}">
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a href="{% url 'accounts:audit' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Réinitialiser
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-funnel me-1"></i> Appliquer les filtres
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau des actions - DESIGN AMÉLIORÉ -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Actions enregistrées</h5>
+                    <div class="small text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        {{ page_obj.paginator.count }} actions trouvées
+                    </div>
+                </div>
+                <div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown">
+                            <i class="bi bi-gear me-1"></i> Options
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="window.print()">
+                                <i class="bi bi-printer me-2"></i> Imprimer
+                            </a></li>
+                            <li><a class="dropdown-item" href="?export=csv">
+                                <i class="bi bi-download me-2"></i> Exporter CSV
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="checkAll">
+                                </div>
+                            </th>
+                            <th>Date/Heure</th>
+                            <th>Utilisateur</th>
+                            <th>Action</th>
+                            <th>Détails</th>
+                            <th class="text-center">Statut</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for audit in page_obj %}
+                        <tr class="border-bottom border-light">
+                            <td class="ps-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="audit_ids" value="{{ audit.id }}">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span class="fw-medium">{{ audit.date|date:"d/m/Y" }}</span>
+                                    <small class="text-muted">{{ audit.date|time:"H:i:s" }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center">
+                                            <span class="text-primary fw-medium">{{ audit.user|first|upper }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <span class="fw-medium">{{ audit.user }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if audit.action == 'USER_LOGIN' %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                        <i class="bi bi-box-arrow-in-right me-1"></i>Connexion
+                                    </span>
+                                {% elif audit.action == 'USER_LOGOUT' %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">
+                                        <i class="bi bi-box-arrow-left me-1"></i>Déconnexion
+                                    </span>
+                                {% elif audit.action == 'LOGIN_FAILED' %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>Échec
+                                    </span>
+                                {% elif 'CREATE' in audit.action %}
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                                        <i class="bi bi-plus-circle me-1"></i>Création
+                                    </span>
+                                {% elif 'UPDATE' in audit.action %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
+                                        <i class="bi bi-pencil me-1"></i>Modification
+                                    </span>
+                                {% elif 'DELETE' in audit.action %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">
+                                        <i class="bi bi-trash me-1"></i>Suppression
+                                    </span>
+                                {% elif 'PUBLISH' in audit.action %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                        <i class="bi bi-check-circle me-1"></i>Publication
+                                    </span>
+                                {% elif 'REJECT' in audit.action %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">
+                                        <i class="bi bi-x-circle me-1"></i>Rejet
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">
+                                        {{ audit.get_action_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>
+                                    <div class="fw-medium text-truncate" style="max-width: 250px;">
+                                        {{ audit.objet }}
+                                    </div>
+                                    <div class="small text-muted text-truncate" style="max-width: 250px;">
+                                        {{ audit.details }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if audit.faculte %}
+                                    <span class="badge bg-light text-dark">{{ audit.faculte }}</span>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary" 
+                                            data-bs-toggle="modal" data-bs-target="#detailsModal{{ audit.id }}"
+                                            title="Voir détails">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary"
+                                            onclick="copyToClipboard('{{ audit.id }}')"
+                                            title="Copier l'ID">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Modal pour voir les détails -->
+                        <div class="modal fade" id="detailsModal{{ audit.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">
+                                            <i class="bi bi-info-circle me-2"></i>Détails de l'action
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <!-- Contenu du modal (inchangé) -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <h6>Informations de base</h6>
+                                                <table class="table table-sm">
+                                                    <tr>
+                                                        <th width="140">Utilisateur:</th>
+                                                        <td>{{ audit.user }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Type d'action:</th>
+                                                        <td>{{ audit.get_action_display }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Date/Heure:</th>
+                                                        <td>{{ audit.date|date:"d/m/Y H:i:s" }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Objet:</th>
+                                                        <td>{{ audit.objet }}</td>
+                                                    </tr>
+                                                    {% if audit.faculte %}
+                                                    <tr>
+                                                        <th>Faculté:</th>
+                                                        <td>{{ audit.faculte }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                    {% if audit.cours %}
+                                                    <tr>
+                                                        <th>Cours:</th>
+                                                        <td>{{ audit.cours }}</td>
+                                                    </tr>
+                                                    {% endif %}
+                                                </table>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Statut</h6>
+                                                <div class="alert alert-light">
+                                                    {% if audit.action == 'USER_LOGIN' %}
+                                                        <span class="badge bg-success">Connexion réussie</span>
+                                                    {% elif audit.action == 'LOGIN_FAILED' %}
+                                                        <span class="badge bg-danger">Échec de connexion</span>
+                                                    {% elif audit.action == 'USER_LOGOUT' %}
+                                                        <span class="badge bg-warning">Déconnexion</span>
+                                                    {% elif 'PUBLISH' in audit.action %}
+                                                        <span class="badge bg-success">Action terminée</span>
+                                                    {% elif 'REJECT' in audit.action %}
+                                                        <span class="badge bg-danger">Action rejetée</span>
+                                                    {% else %}
+                                                        <span class="badge bg-info">Action enregistrée</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <h6>Détails complets</h6>
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">{{ audit.details }}</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                </div>
+                <h5 class="text-muted">Aucune action d'audit trouvée</h5>
+                {% if request.GET %}
+                    <p class="text-muted small">Essayez de modifier vos filtres de recherche</p>
+                    <a href="{% url 'accounts:audit' %}" class="btn btn-outline-primary btn-sm mt-2">
+                        <i class="bi bi-x-circle me-1"></i> Réinitialiser les filtres
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- PAGINATION AMÉLIORÉE -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="card-footer bg-white border-0 pt-3">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <!-- Informations -->
+                <div class="small text-muted">
+                    Affichage de <span class="fw-medium">{{ page_obj.start_index }}</span> à 
+                    <span class="fw-medium">{{ page_obj.end_index }}</span> sur 
+                    <span class="fw-medium">{{ page_obj.paginator.count }}</span> actions
+                </div>
+                
+                <!-- Navigation -->
+                <nav aria-label="Navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        <!-- Première page -->
+                        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                            <a class="page-link border-0 rounded-start" 
+                               href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                               {% if not page_obj.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        
+                        <!-- Page précédente -->
+                        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                            <a class="page-link border-0" 
+                               href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                               {% if not page_obj.has_previous %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        
+                        <!-- Pages -->
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if num == page_obj.number %}
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link border-0">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link border-0" 
+                                       href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                                <li class="page-item">
+                                    <a class="page-link border-0" 
+                                       href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% elif num == page_obj.number|add:'-4' or num == page_obj.number|add:'4' %}
+                                <li class="page-item disabled">
+                                    <span class="page-link border-0">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <!-- Page suivante -->
+                        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                            <a class="page-link border-0" 
+                               href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                               {% if not page_obj.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        
+                        <!-- Dernière page -->
+                        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                            <a class="page-link border-0 rounded-end" 
+                               href="?page={{ page_obj.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                               {% if not page_obj.has_next %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                
+                <!-- Sélecteur d'éléments par page -->
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-muted">Afficher :</span>
+                    <select class="form-select form-select-sm w-auto border-secondary-subtle" 
+                            onchange="changeItemsPerPage(this)">
+                        <option value="10" {% if request.GET.per_page == '10' or not request.GET.per_page %}selected{% endif %}>10</option>
+                        <option value="25" {% if request.GET.per_page == '25' %}selected{% endif %}>25</option>
+                        <option value="50" {% if request.GET.per_page == '50' %}selected{% endif %}>50</option>
+                        <option value="100" {% if request.GET.per_page == '100' %}selected{% endif %}>100</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Note finale -->
+    <div class="mt-4 text-center">
+        <div class="alert alert-light border" role="alert">
+            <i class="bi bi-shield-check text-primary me-2"></i>
+            <span class="small">
+                Les actions d'audit sont conservées pendant 1 an pour assurer la traçabilité et la sécurité du système.
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuration des dates
+    const today = new Date().toISOString().split('T')[0];
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    
+    dateInputs.forEach(input => {
+        if (!input.value) {
+            if (input.name === 'date_debut') {
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                input.value = weekAgo.toISOString().split('T')[0];
+            } else if (input.name === 'date_fin') {
+                input.value = today;
+            }
+        }
+        input.max = today;
+    });
+    
+    // Gestion des dates liées
+    const dateDebut = document.querySelector('input[name="date_debut"]');
+    const dateFin = document.querySelector('input[name="date_fin"]');
+    
+    if (dateDebut && dateFin) {
+        dateDebut.addEventListener('change', function() {
+            dateFin.min = this.value;
+            if (dateFin.value && dateFin.value < this.value) {
+                dateFin.value = this.value;
+            }
+        });
+        
+        dateFin.addEventListener('change', function() {
+            dateDebut.max = this.value;
+            if (dateDebut.value && dateDebut.value > this.value) {
+                dateDebut.value = this.value;
+            }
+        });
+    }
+    
+    // Sélection multiple
+    const checkAll = document.getElementById('checkAll');
+    if (checkAll) {
+        checkAll.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('input[name="audit_ids"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+});
+
+function changeItemsPerPage(select) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('per_page', select.value);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+}
+
+function copyToClipboard(auditId) {
+    navigator.clipboard.writeText(auditId).then(() => {
+        // Afficher un toast de confirmation (si vous avez un système de toast)
+        console.log('ID copié : ' + auditId);
+    });
+}
+
+// Initialiser les tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+});
+</script>
+
+<style>
+/* Styles personnalisés */
+.avatar-sm {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px 16px;
+}
+
+.table td {
+    padding: 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    padding: 6px 10px;
+    font-weight: 500;
+    font-size: 0.75rem;
+    letter-spacing: 0.3px;
+}
+
+.page-link {
+    color: #495057;
+    border: 1px solid #dee2e6;
+    margin: 0 2px;
+    border-radius: 4px !important;
+}
+
+.page-link:hover {
+    background-color: #e9ecef;
+    color: #0d6efd;
+    border-color: #dee2e6;
+}
+
+.page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.page-item.disabled .page-link {
+    color: #adb5bd;
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card-header .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    
+    .card-footer .d-flex {
+        flex-direction: column;
+        gap: 15px !important;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+    }
+}
+
+/* Animation pour les lignes du tableau */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+tbody tr {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Style d'impression */
+@media print {
+    .navbar, .btn, .modal, footer, .card-header, .pagination,
+    .form-check, .dropdown, .alert {
+        display: none !important;
+    }
+    
+    .table {
+        font-size: 0.9rem;
+        border: 1px solid #000;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .card-body {
+        padding: 0 !important;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        color: #000 !important;
+    }
+}
+</style>
+{% endblock %}

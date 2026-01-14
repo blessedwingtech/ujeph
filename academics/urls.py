@@ -14,7 +14,7 @@ urlpatterns = [
     path('mes-cours-etudiant/', views.mes_cours_etudiant, name='mes_cours_etudiant'),
     path('cours/recherche_/', views.rechercher_cours_ajax, name='recherche_cours_ajax'),
     path('cours/recherche/', views.recherche_cours_ajax, name='recherche_cours_ajax'),
-
+    
     
     # ✅ Consultation générale (admin peut tout voir)
     path('facultes/', views.liste_facultes, name='liste_facultes'),

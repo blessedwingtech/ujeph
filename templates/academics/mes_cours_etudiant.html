@@ -51,7 +51,7 @@
                         {% if cours.professeur %}
                             <div class="d-flex align-items-center">
                                 <div class="bg-primary bg-opacity-10 p-2 rounded me-2">
-                                    <a href="{% url 'accounts:voir_profil_utilisateur' cours.professeur.id %}" class="text-decoration-none">
+                                    <a href="{% url 'accounts:voir_professeur' cours.professeur.id %}" class="text-decoration-none">
                                     <i class="bi bi-person-circle text-primary"></i>
                                     </a>
                                 </div>

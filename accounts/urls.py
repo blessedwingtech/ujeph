@@ -55,6 +55,9 @@ urlpatterns = [
     path('debug-session/', views.debug_session, name='debug_session'),
 
     path('utilisateurs/<int:user_id>/profil/', views.voir_profil_utilisateur, name='voir_profil_utilisateur'),
+    # accounts/urls.py
+    path('professeur/<int:user_id>/', views.voir_professeur_cours, name='voir_professeur'),
+
     #password reset urls
     path('password-reset/', 
          auth_views.PasswordResetView.as_view(

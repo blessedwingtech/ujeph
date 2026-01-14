@@ -112,162 +112,189 @@
             <span class="badge bg-primary">{{ page_obj.paginator.count }} actions</span>
         </div>
         
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="150">Date/Heure</th>
-                            <th width="120">Utilisateur</th>
-                            <th width="180">Type d'action</th>
-                            <th>Objet</th>
-                            <th width="150">Faculté</th>
-                            <th width="80" class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for audit in page_obj %}
-                        <tr>
-                            <td>
-                                <div class="small text-muted">{{ audit.date|date:"d/m/Y" }}</div>
-                                <div class="small">{{ audit.date|time:"H:i:s" }}</div>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">{{ audit.user }}</span>
-                            </td>
-                            <td>
-                                {% if audit.action == 'USER_LOGIN' %}
-                                    <span class="badge bg-success"><i class="bi bi-box-arrow-in-right me-1"></i>Connexion</span>
-                                {% elif audit.action == 'USER_LOGOUT' %}
-                                    <span class="badge bg-warning"><i class="bi bi-box-arrow-left me-1"></i>Déconnexion</span>
-                                {% elif audit.action == 'LOGIN_FAILED' %}
-                                    <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>Échec connexion</span>
-                                {% elif 'CREATE' in audit.action %}
-                                    <span class="badge bg-info"><i class="bi bi-plus-circle me-1"></i>Création</span>
-                                {% elif 'UPDATE' in audit.action %}
-                                    <span class="badge bg-primary"><i class="bi bi-pencil me-1"></i>Modification</span>
-                                {% elif 'DELETE' in audit.action %}
-                                    <span class="badge bg-danger"><i class="bi bi-trash me-1"></i>Suppression</span>
-                                {% elif 'PUBLISH' in audit.action %}
-                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Publication</span>
-                                {% elif 'REJECT' in audit.action %}
-                                    <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejet</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">{{ audit.get_action_display }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="fw-medium">{{ audit.objet }}</div>
-                                <div class="small text-muted">{{ audit.details|truncatechars:100 }}</div>
-                            </td>
-                            <td>
-                                {% if audit.faculte %}
-                                    <span class="badge bg-light text-dark">{{ audit.faculte }}</span>
-                                {% else %}
-                                    <span class="text-muted small">-</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-outline-primary" 
-                                        data-bs-toggle="modal" data-bs-target="#detailsModal{{ audit.id }}">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        
-                        <!-- Modal pour voir les détails -->
-                        <div class="modal fade" id="detailsModal{{ audit.id }}" tabindex="-1">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Détails de l'action</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="row mb-3">
-                                            <div class="col-md-6">
-                                                <h6>Informations de base</h6>
-                                                <table class="table table-sm">
-                                                    <tr>
-                                                        <th width="140">Utilisateur:</th>
-                                                        <td>{{ audit.user }}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th>Type d'action:</th>
-                                                        <td>{{ audit.get_action_display }}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th>Date/Heure:</th>
-                                                        <td>{{ audit.date|date:"d/m/Y H:i:s" }}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <th>Objet:</th>
-                                                        <td>{{ audit.objet }}</td>
-                                                    </tr>
-                                                    {% if audit.faculte %}
-                                                    <tr>
-                                                        <th>Faculté:</th>
-                                                        <td>{{ audit.faculte }}</td>
-                                                    </tr>
-                                                    {% endif %}
-                                                    {% if audit.cours %}
-                                                    <tr>
-                                                        <th>Cours:</th>
-                                                        <td>{{ audit.cours }}</td>
-                                                    </tr>
-                                                    {% endif %}
-                                                </table>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <h6>Statut</h6>
-                                                <div class="alert alert-light">
-                                                    {% if audit.action == 'USER_LOGIN' %}
-                                                        <span class="badge bg-success">Connexion réussie</span>
-                                                    {% elif audit.action == 'LOGIN_FAILED' %}
-                                                        <span class="badge bg-danger">Échec de connexion</span>
-                                                    {% elif audit.action == 'USER_LOGOUT' %}
-                                                        <span class="badge bg-warning">Déconnexion</span>
-                                                    {% elif 'PUBLISH' in audit.action %}
-                                                        <span class="badge bg-success">Action terminée</span>
-                                                    {% elif 'REJECT' in audit.action %}
-                                                        <span class="badge bg-danger">Action rejetée</span>
-                                                    {% else %}
-                                                        <span class="badge bg-info">Action enregistrée</span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <h6>Détails complets</h6>
-                                        <div class="card bg-light">
-                                            <div class="card-body">
-                                                <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">{{ audit.details }}</pre>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                                    </div>
-                                </div>
-                            </div>
+       <div class="card-body p-0">
+    <div class="table-responsive">
+        <table class="table align-middle table-hover mb-0 audit-table">
+            <thead class="table-light text-uppercase small">
+                <tr>
+                    <th class="ps-4" width="160">Date & Heure</th>
+                    <th width="140">Utilisateur</th>
+                    <th width="200">Action</th>
+                    <th>Objet</th>
+                    <th width="160">Faculté</th>
+                    <th width="90" class="text-center pe-4">Voir</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for audit in page_obj %}
+                <tr>
+                    <!-- Date -->
+                    <td class="ps-4">
+                        <div class="fw-semibold">{{ audit.date|date:"d/m/Y" }}</div>
+                        <div class="text-muted small">{{ audit.date|time:"H:i:s" }}</div>
+                    </td>
+
+                    <!-- Utilisateur -->
+                    <td>
+                        <span class="badge bg-secondary-subtle text-dark fw-normal px-3 py-2 rounded-pill">
+                            <i class="bi bi-person me-1"></i>{{ audit.user }}
+                        </span>
+                    </td>
+
+                    <!-- Action -->
+                    <td>
+                        {% if audit.action == 'USER_LOGIN' %}
+                            <span class="badge bg-success-subtle text-success">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Connexion
+                            </span>
+                        {% elif audit.action == 'USER_LOGOUT' %}
+                            <span class="badge bg-warning-subtle text-warning">
+                                <i class="bi bi-box-arrow-left me-1"></i> Déconnexion
+                            </span>
+                        {% elif audit.action == 'LOGIN_FAILED' %}
+                            <span class="badge bg-danger-subtle text-danger">
+                                <i class="bi bi-exclamation-triangle me-1"></i> Échec
+                            </span>
+                        {% elif 'CREATE' in audit.action %}
+                            <span class="badge bg-info-subtle text-info">
+                                <i class="bi bi-plus-circle me-1"></i> Création
+                            </span>
+                        {% elif 'UPDATE' in audit.action %}
+                            <span class="badge bg-primary-subtle text-primary">
+                                <i class="bi bi-pencil me-1"></i> Modification
+                            </span>
+                        {% elif 'DELETE' in audit.action %}
+                            <span class="badge bg-danger-subtle text-danger">
+                                <i class="bi bi-trash me-1"></i> Suppression
+                            </span>
+                        {% elif 'PUBLISH' in audit.action %}
+                            <span class="badge bg-success-subtle text-success">
+                                <i class="bi bi-check-circle me-1"></i> Publication
+                            </span>
+                        {% elif 'REJECT' in audit.action %}
+                            <span class="badge bg-danger-subtle text-danger">
+                                <i class="bi bi-x-circle me-1"></i> Rejet
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-dark">
+                                {{ audit.get_action_display }}
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Objet -->
+                    <td>
+                        <div class="fw-medium text-dark">{{ audit.objet }}</div>
+                        <div class="text-muted small">{{ audit.details|truncatechars:90 }}</div>
+                    </td>
+
+                    <!-- Faculté -->
+                    <td>
+                        {% if audit.faculte %}
+                            <span class="badge bg-light text-dark border rounded-pill px-3">
+                                <i class="bi bi-mortarboard me-1"></i>{{ audit.faculte }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Action -->
+                    <td class="text-center pe-4">
+                        <button class="btn btn-sm btn-outline-primary rounded-circle"
+                                data-bs-toggle="modal"
+                                data-bs-target="#detailsModal{{ audit.id }}">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <i class="bi bi-inbox display-6 text-muted d-block mb-2"></i>
+                        <div class="text-muted fw-semibold">
+                            Aucune action d'audit trouvée
                         </div>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="bi bi-inbox display-6 d-block mb-2"></i>
-                                    Aucune action d'audit trouvée
-                                    {% if request.GET %}
-                                        <div class="mt-2 small">Essayez de modifier vos filtres de recherche</div>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% for audit in page_obj %}
+<div class="modal fade" id="detailsModal{{ audit.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-clipboard-data me-2 text-primary"></i>
+                    Détails de l'action
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Informations de base</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="140">Utilisateur</th>
+                                <td>{{ audit.user }}</td>
+                            </tr>
+                            <tr>
+                                <th>Type d'action</th>
+                                <td>{{ audit.get_action_display }}</td>
+                            </tr>
+                            <tr>
+                                <th>Date / Heure</th>
+                                <td>{{ audit.date|date:"d/m/Y H:i:s" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Objet</th>
+                                <td>{{ audit.objet }}</td>
+                            </tr>
+                            {% if audit.faculte %}
+                            <tr>
+                                <th>Faculté</th>
+                                <td>{{ audit.faculte }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if audit.cours %}
+                            <tr>
+                                <th>Cours</th>
+                                <td>{{ audit.cours }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6>Statut</h6>
+                        <div class="alert alert-light">
+                            <span class="badge bg-info">Action enregistrée</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h6>Détails complets</h6>
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <pre class="mb-0" style="white-space: pre-wrap;">{{ audit.details }}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
             </div>
         </div>
+    </div>
+</div>
+{% endfor %}
+
+    </div>
+</div>
+
         
         <!-- Pagination -->
         {% if page_obj.paginator.num_pages > 1 %}
@@ -421,5 +448,43 @@ document.addEventListener('DOMContentLoaded', function() {
             padding: 0 !important;
         }
     }
+    /* Table Audit */
+.audit-table th {
+    letter-spacing: 0.04em;
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.audit-table tbody tr {
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.audit-table tbody tr:hover {
+    background-color: #f8fbff;
+    box-shadow: inset 3px 0 0 #0d6efd;
+}
+
+/* Badges plus doux */
+.badge.bg-*-subtle {
+    font-weight: 500;
+    padding: 0.45em 0.75em;
+}
+
+/* Bouton œil */
+.audit-table .btn-outline-primary {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.audit-table .btn-outline-primary:hover {
+    background-color: #0d6efd;
+    color: #fff;
+    transform: scale(1.05);
+}
+
 </style>
 {% endblock %}
