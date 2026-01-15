@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 
 from accounts.permissions import django_superuser_required
-from .forms import AdminCreationForm, UserEditForm, UserForm, EtudiantForm, ProfesseurForm
+from .forms import AdminCreationForm, AdminModificationForm, UserEditForm, UserForm, EtudiantForm, ProfesseurForm
 from .models import LoginAttempt, User, Etudiant, Professeur, Admin, get_annee_academique  # ✅ Admin importé
 from django.core.paginator import Paginator   
 from django.contrib.auth import authenticate, login, logout
@@ -48,7 +48,7 @@ from django.db.models import Q
 from .models import User, Etudiant, Professeur
  
 from .audit_utils import (
-    audit_action_generique, audit_creer_etudiant, audit_modifier_etudiant, audit_supprimer_etudiant,
+    audit_action_generique, audit_creer_etudiant, audit_modifier_admin, audit_modifier_etudiant, audit_supprimer_etudiant,
     audit_creer_professeur, audit_modifier_professeur, audit_supprimer_professeur,
     audit_creer_admin, audit_login, audit_logout, audit_login_failed
 )
@@ -1332,6 +1332,107 @@ def liste_admins(request):
     }
     
     return render(request, 'accounts/liste_admins.html', context)
+
+
+@login_required
+@permission_required(can_manage_admins, redirect_url='accounts:dashboard')
+def modifier_admin(request, admin_id):
+    """Modifier un administrateur existant - VERSION FINALE"""
+    try:
+        admin = Admin.objects.select_related('user').get(id=admin_id)
+        user = admin.user
+    except Admin.DoesNotExist:
+        messages.error(request, "❌ Administrateur introuvable.")
+        return redirect('accounts:liste_admins')
+    
+    # Empêcher la modification de soi-même
+    if user == request.user:
+        messages.warning(request, "⚠️ Vous ne pouvez pas modifier votre propre compte ici.")
+        return redirect('accounts:liste_admins')
+    
+    if request.method == 'POST':
+        # FORMULAIRES CORRIGÉS :
+        user_form = UserEditForm(request.POST, instance=user)  # UserEditForm, pas UserForm !
+        admin_form = AdminModificationForm(request.POST, instance=admin)
+        
+        if user_form.is_valid() and admin_form.is_valid():
+            try:
+                with transaction.atomic():
+                    # 1. Mettre à jour l'utilisateur
+                    updated_user = user_form.save()
+                    
+                    # 2. Mettre à jour les permissions admin
+                    updated_admin = admin_form.save()
+                    
+                    # 3. Gérer le mot de passe (champ séparé, pas dans les formulaires)
+                    new_password = request.POST.get('new_password', '').strip()
+                    if new_password:
+                        if len(new_password) >= 4:
+                            updated_user.set_password(new_password)
+                            updated_user.save()
+                            messages.info(request, "🔐 Mot de passe mis à jour.")
+                        else:
+                            messages.warning(request, "⚠️ Mot de passe trop court (min 4 caractères)")
+                    
+                    # 4. Synchroniser les permissions avec le niveau d'accès
+                    niveau = admin_form.cleaned_data['niveau_acces']
+                    if niveau == 'super':
+                        updated_admin.peut_gerer_utilisateurs = True
+                        updated_admin.peut_gerer_cours = True
+                        updated_admin.peut_valider_notes = True
+                        updated_admin.peut_gerer_facultes = True
+                    elif niveau == 'academique':
+                        updated_admin.peut_gerer_utilisateurs = False  # Pas de gestion users
+                        updated_admin.peut_gerer_cours = True
+                        updated_admin.peut_valider_notes = True
+                        updated_admin.peut_gerer_facultes = True
+                    elif niveau == 'utilisateurs':
+                        updated_admin.peut_gerer_utilisateurs = True
+                        updated_admin.peut_gerer_cours = False  # Pas de gestion académique
+                        updated_admin.peut_valider_notes = False
+                        updated_admin.peut_gerer_facultes = False
+                    
+                    updated_admin.save()
+                
+                # ✅ AUDIT - CORRECTEMENT APPELÉ
+                changements = f"Niveau: {updated_admin.get_niveau_acces_display()}, "
+                changements += f"Perms: U={updated_admin.peut_gerer_utilisateurs}, "
+                changements += f"C={updated_admin.peut_gerer_cours}, "
+                changements += f"N={updated_admin.peut_valider_notes}, "
+                changements += f"F={updated_admin.peut_gerer_facultes}"
+                
+                audit_modifier_admin(request, updated_admin, changements)
+                
+                messages.success(
+                    request, 
+                    f"✅ Administrateur {updated_user.get_full_name()} mis à jour avec succès!"
+                )
+                return redirect('accounts:liste_admins')
+                
+            except Exception as e:
+                messages.error(request, f"❌ Erreur lors de la sauvegarde: {str(e)}")
+        
+        else:
+            # Validation échouée
+            error_count = len(user_form.errors) + len(admin_form.errors)
+            messages.error(
+                request, 
+                f"❌ Formulaire invalide ({error_count} erreur{'s' if error_count > 1 else ''})"
+            )
+    
+    else:
+        # GET request - initialiser avec les données existantes
+        user_form = UserEditForm(instance=user)
+        admin_form = AdminModificationForm(instance=admin)
+    
+    context = {
+        'admin': admin,
+        'user_form': user_form,
+        'admin_form': admin_form,
+        'page_title': f'Modifier {user.get_full_name()}'
+    }
+    
+    return render(request, 'accounts/modifier_admin.html', context)
 
  
 # accounts/views.py

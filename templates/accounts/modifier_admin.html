@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% block title %}Modifier Administrateur{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <h3 class="mb-2">
+            <i class="bi bi-person-shield text-warning"></i> Modifier Administrateur
+        </h3>
+        <p class="text-muted mb-0">Modifier les informations de {{ admin.user.get_full_name }}</p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- 1. INFORMATIONS PERSONNELLES -->
+                        <h5 class="mb-3 border-bottom pb-2">
+                            <i class="bi bi-person"></i> Informations personnelles
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nom d'utilisateur</label>
+                                {{ user_form.username }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                {{ user_form.email }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Prénom</label>
+                                {{ user_form.first_name }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nom</label>
+                                {{ user_form.last_name }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Téléphone</label>
+                            {{ user_form.telephone }}
+                        </div>
+                        
+                        <!-- CHAMP PASSWORD SÉPARÉ -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nouveau mot de passe (optionnel)</label>
+                            <input type="password" 
+                                   name="new_password" 
+                                   class="form-control" 
+                                   placeholder="Laisser vide pour garder le mot de passe actuel"
+                                   minlength="4">
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i>
+                                Minimum 4 caractères. Laissez vide si vous ne voulez pas changer le mot de passe.
+                            </div>
+                        </div>
+                        
+                        <!-- 2. PERMISSIONS -->
+                        <h5 class="mb-3 border-bottom pb-2 mt-4">
+                            <i class="bi bi-shield-check"></i> Permissions
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Niveau d'accès</label>
+                                {{ admin_form.niveau_acces }}
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle"></i>
+                                    Le niveau définit les permissions par défaut
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-lightbulb"></i>
+                            <strong>Permissions détaillées :</strong> Cochez les cases pour activer des permissions spécifiques
+                        </div>
+                        
+                        <!-- CHECKBOXES DES PERMISSIONS -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    {{ admin_form.peut_gerer_utilisateurs }}
+                                    <label class="form-check-label fw-medium">
+                                        <i class="bi bi-people text-primary"></i>
+                                        Gestion des utilisateurs
+                                    </label>
+                                    <div class="form-text small">
+                                        Créer/modifier/supprimer les comptes étudiants, professeurs, admins
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    {{ admin_form.peut_gerer_cours }}
+                                    <label class="form-check-label fw-medium">
+                                        <i class="bi bi-journal-text text-success"></i>
+                                        Gestion des cours
+                                    </label>
+                                    <div class="form-text small">
+                                        Gérer les cours, programmes, emplois du temps
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    {{ admin_form.peut_valider_notes }}
+                                    <label class="form-check-label fw-medium">
+                                        <i class="bi bi-check-square text-warning"></i>
+                                        Validation des notes
+                                    </label>
+                                    <div class="form-text small">
+                                        Valider/publier/rejeter les notes soumises par les professeurs
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check mb-2">
+                                    {{ admin_form.peut_gerer_facultes }}
+                                    <label class="form-check-label fw-medium">
+                                        <i class="bi bi-building text-info"></i>
+                                        Gestion des facultés
+                                    </label>
+                                    <div class="form-text small">
+                                        Gérer les facultés, départements, structures académiques
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BOUTONS -->
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a href="{% url 'accounts:liste_admins' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Annuler
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-warning px-4">
+                                    <i class="bi bi-check-circle"></i> Mettre à jour
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PANEL LATÉRAL -->
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="fw-bold">Administrateur</h6>
+                        <p class="mb-1">
+                            <strong>Nom:</strong> {{ admin.user.get_full_name }}
+                        </p>
+                        <p class="mb-1">
+                            <strong>Nom d'utilisateur:</strong> <code>{{ admin.user.username }}</code>
+                        </p>
+                        <p class="mb-1">
+                            <strong>Créé le:</strong> {{ admin.date_nomination|date:"d/m/Y" }}
+                        </p>
+                        <p class="mb-1">
+                            <strong>Dernière connexion:</strong> 
+                            {% if admin.user.last_login %}
+                                {{ admin.user.last_login|date:"d/m/Y H:i" }}
+                            {% else %}
+                                <span class="badge bg-secondary">Jamais</span>
+                            {% endif %}
+                        </p>
+                        <p class="mb-1">
+                            <strong>Niveau actuel:</strong> 
+                            {% if admin.niveau_acces == 'super' %}
+                                <span class="badge bg-danger">Super Admin</span>
+                            {% elif admin.niveau_acces == 'academique' %}
+                                <span class="badge bg-warning">Admin Académique</span>
+                            {% else %}
+                                <span class="badge bg-info">Gestionnaire</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <small>
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Attention :</strong> Les modifications prennent effet immédiatement.
+                            Les permissions cochées surchargent le niveau d'accès.
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-light border">
+                        <h6 class="fw-bold">Comment ça marche ?</h6>
+                        <small class="text-muted">
+                            1. Choisissez un <strong>niveau d'accès</strong> pour les permissions par défaut<br>
+                            2. Ajustez avec les <strong>cases à cocher</strong> pour des permissions spécifiques<br>
+                            3. Laissez le mot de passe vide pour ne pas le changer
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript pour synchroniser niveau d'accès et checkboxes -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const niveauSelect = document.querySelector('#id_niveau_acces');
+    const checkboxes = {
+        users: document.querySelector('#id_peut_gerer_utilisateurs'),
+        cours: document.querySelector('#id_peut_gerer_cours'),
+        notes: document.querySelector('#id_peut_valider_notes'),
+        fac: document.querySelector('#id_peut_gerer_facultes')
+    };
+    
+    function updatePermissionsFromLevel() {
+        const niveau = niveauSelect.value;
+        
+        // Réinitialiser tous les checkboxes
+        for (const key in checkboxes) {
+            if (checkboxes[key]) {
+                checkboxes[key].disabled = false;
+            }
+        }
+        
+        // Appliquer les permissions par défaut selon le niveau
+        switch(niveau) {
+            case 'super':
+                // Tout activé
+                for (const key in checkboxes) {
+                    if (checkboxes[key]) {
+                        checkboxes[key].checked = true;
+                        checkboxes[key].disabled = true; // Empêcher modification
+                    }
+                }
+                break;
+                
+            case 'academique':
+                // Pas de gestion utilisateurs
+                if (checkboxes.users) {
+                    checkboxes.users.checked = false;
+                    checkboxes.users.disabled = true;
+                }
+                // Le reste activé
+                if (checkboxes.cours) checkboxes.cours.checked = true;
+                if (checkboxes.notes) checkboxes.notes.checked = true;
+                if (checkboxes.fac) checkboxes.fac.checked = true;
+                break;
+                
+            case 'utilisateurs':
+                // Seulement gestion utilisateurs
+                if (checkboxes.users) checkboxes.users.checked = true;
+                // Le reste désactivé
+                if (checkboxes.cours) {
+                    checkboxes.cours.checked = false;
+                    checkboxes.cours.disabled = true;
+                }
+                if (checkboxes.notes) {
+                    checkboxes.notes.checked = false;
+                    checkboxes.notes.disabled = true;
+                }
+                if (checkboxes.fac) {
+                    checkboxes.fac.checked = false;
+                    checkboxes.fac.disabled = true;
+                }
+                break;
+        }
+    }
+    
+    if (niveauSelect) {
+        niveauSelect.addEventListener('change', updatePermissionsFromLevel);
+        updatePermissionsFromLevel(); // Initialiser
+    }
+});
+</script>
+{% endblock %}

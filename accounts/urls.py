@@ -67,6 +67,7 @@ urlpatterns = [
              success_url='/comptes/password-reset/done/'), name='password_reset'), 
     path('systeme/admins/', django_superuser_required(views.liste_admins_systeme), name='liste_admins_systeme'),         
     path('systeme/creer-admin/', django_superuser_required(views.creer_admin_systeme), name='creer_admin_systeme'),
+    path('admins/modifier/<int:admin_id>/', views.modifier_admin, name='modifier_admin'),
     
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='accounts/password_reset_done.html'), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='accounts/password_reset_confirm.html', success_url='/comptes/reset/done/'), name='password_reset_confirm'),

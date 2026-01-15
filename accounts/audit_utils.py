@@ -372,6 +372,29 @@ def audit_login_failed(request, username):
         cours=""
     )
 
+# Dans audit_utils.py - AJOUTER CETTE FONCTION
+def audit_modifier_admin(request, admin_obj, changements=None):
+    """Audit modification d'un administrateur"""
+    details = f"Admin {admin_obj.user.username} modifié"
+    if changements:
+        details += f". Changements: {changements}"
+    else:
+        # Détails par défaut
+        details += f". Niveau: {admin_obj.get_niveau_acces_display()}, "
+        details += f"Permissions: U={admin_obj.peut_gerer_utilisateurs}, "
+        details += f"C={admin_obj.peut_gerer_cours}, "
+        details += f"N={admin_obj.peut_valider_notes}, "
+        details += f"F={admin_obj.peut_gerer_facultes}"
+    
+    AuditAction.objects.create(
+        user=request.user.username,
+        action='UPDATE_ADMIN',
+        objet=f"Admin: {admin_obj.user.username}",
+        details=details,
+        faculte="",
+        cours=""
+    )
+
 # ============================================================================
 # 9. FONCTION GÉNÉRIQUE
 # ============================================================================

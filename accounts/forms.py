@@ -1,5 +1,5 @@
 from django import forms
-from .models import User, Etudiant, Professeur
+from .models import Admin, User, Etudiant, Professeur
 from academics.models import Faculte 
 from django.contrib.auth.forms import UserChangeForm 
 from django.core.exceptions import ObjectDoesNotExist
@@ -219,6 +219,10 @@ class AdminCreationForm(forms.ModelForm):  # Hérite de UserForm
         for field_name, field in self.fields.items():
             if field_name != 'telephone':  # téléphone peut être optionnel
                 field.required = True
+
+            # AJOUTER CETTE LIGNE pour styliser le champ téléphone
+        if 'telephone' in self.fields:
+            self.fields['telephone'].widget.attrs.update({'class': 'form-control'})
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
         # Rendre le mot de passe optionnel et caché
@@ -226,3 +230,39 @@ class AdminCreationForm(forms.ModelForm):  # Hérite de UserForm
         # self.fields['password'].required = False
         # self.fields['password'].help_text = "Laissez vide pour '1234' par défaut"
 
+
+# forms.py - VERSION OPTIMISÉE
+
+# Pour la MODIFICATION, utiliser UserEditForm (pas UserForm)
+# UserEditForm existe déjà dans votre code et est parfait
+
+# Corriger AdminModificationForm
+class AdminModificationForm(forms.ModelForm):
+    """Formulaire pour modifier UNIQUEMENT les permissions admin"""
+    niveau_acces = forms.ChoiceField(
+        choices=[
+            ('super', 'Super Administrateur (toutes permissions)'),
+            ('academique', 'Administrateur Académique (pas de gestion utilisateurs)'),
+            ('utilisateurs', 'Gestionnaire Utilisateurs (utilisateurs seulement)')
+        ],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Niveau d'accès"
+    )
+    
+    # PAS de champ password ici ! On le gère séparément
+    
+    class Meta:
+        model = Admin
+        fields = ['niveau_acces', 'peut_gerer_utilisateurs', 'peut_gerer_cours', 
+                  'peut_valider_notes', 'peut_gerer_facultes']
+        widgets = {
+            'peut_gerer_utilisateurs': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'peut_gerer_cours': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'peut_valider_notes': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'peut_gerer_facultes': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Simplifier - pas besoin de manipuler les attrs
+        pass
